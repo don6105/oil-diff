@@ -86,21 +86,23 @@ def lint_report(repo: Path, report_dir: Path) -> tuple[list[str], list[str]]:
     check_git_isolation(repo, report_dir, errors)
 
     assets_dir = report_dir / "assets"
-    data_path = (
-        assets_dir / "diff-data.json"
-        if (assets_dir / "diff-data.json").is_file()
-        else report_dir / "diff-data.json"
-    )
-    spec_path = (
-        assets_dir / "report-spec.json"
-        if (assets_dir / "report-spec.json").is_file()
-        else report_dir / "report-spec.json"
-    )
+    if not assets_dir.is_dir():
+        errors.append(f"Missing assets directory inside report directory: {assets_dir}")
+    data_path = assets_dir / "diff-data.json"
+    spec_path = assets_dir / "report-spec.json"
     html_path = report_dir / "index.html"
 
     for p in (data_path, spec_path, html_path):
         if not p.is_file():
-            errors.append(f"Missing required report artifact: {p.name}")
+            errors.append(f"Missing required report artifact: {p.relative_to(report_dir)}")
+
+    allowed_top = {".gitignore", "index.html", "assets"}
+    if report_dir.is_dir():
+        stray_top = sorted(p.name for p in report_dir.iterdir() if p.name not in allowed_top)
+        if stray_top:
+            errors.append(
+                f"Top-level .oil-diff directory should only contain index.html, .gitignore, and assets/; move stray files into assets/: {stray_top}"
+            )
 
     if errors:
         return errors, warnings

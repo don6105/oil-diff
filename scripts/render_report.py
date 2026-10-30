@@ -362,10 +362,16 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         )
         used: set[str] = set()
         points = item.get("points", [])
+        inline_diffs = item.get("inlineDiffs", [])
         for j, pt in enumerate(points, 1):
-            pt_title = str(pt.get("title", ""))
-            pt_copy = str(pt.get("copy", ""))
-            diffs = pt.get("diffs", [])
+            if isinstance(pt, list):
+                pt_title = str(pt[0]) if pt else ""
+                pt_copy = str(pt[1]) if len(pt) > 1 else ""
+                diffs = inline_diffs[j - 1] if j - 1 < len(inline_diffs) else []
+            else:
+                pt_title = str(pt.get("title", ""))
+                pt_copy = str(pt.get("copy", ""))
+                diffs = pt.get("diffs", [])
             body += (
                 f'<section class="change-point" id="change-{n}-{j}">'
                 f"<h3><span>{j}</span>{e(pt_title)}</h3>"
@@ -554,14 +560,27 @@ def render_html_document(data: dict[str, object], spec: dict[str, object]) -> st
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Render standalone HTML change report.")
-    parser.add_argument("--data", required=True, help="Path to diff-data.json.")
-    parser.add_argument("--spec", required=True, help="Path to report-spec.json.")
-    parser.add_argument("--output", required=True, help="Output HTML file path (e.g. .oil-diff/index.html).")
+    parser.add_argument(
+        "--report-dir",
+        default=None,
+        help="Path to .oil-diff directory (auto-resolves assets/diff-data.json, assets/report-spec.json, and index.html).",
+    )
+    parser.add_argument("--data", default=None, help="Path to diff-data.json.")
+    parser.add_argument("--spec", default=None, help="Path to report-spec.json.")
+    parser.add_argument("--output", default=None, help="Output HTML file path (e.g. .oil-diff/index.html).")
     args = parser.parse_args()
 
-    data_path = Path(args.data).resolve()
-    spec_path = Path(args.spec).resolve()
-    out_path = Path(args.output).resolve()
+    if args.report_dir:
+        rdir = Path(args.report_dir).resolve()
+        data_path = Path(args.data).resolve() if args.data else (rdir / "assets" / "diff-data.json")
+        spec_path = Path(args.spec).resolve() if args.spec else (rdir / "assets" / "report-spec.json")
+        out_path = Path(args.output).resolve() if args.output else (rdir / "index.html")
+    else:
+        if not (args.data and args.spec and args.output):
+            parser.error("Provide --report-dir or all of --data, --spec, and --output.")
+        data_path = Path(args.data).resolve()
+        spec_path = Path(args.spec).resolve()
+        out_path = Path(args.output).resolve()
 
     data = json.loads(data_path.read_text(encoding="utf-8"))
     spec = json.loads(spec_path.read_text(encoding="utf-8"))

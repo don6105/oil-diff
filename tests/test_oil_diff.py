@@ -147,12 +147,8 @@ class OilDiffWorkflowTests(unittest.TestCase):
             [
                 sys.executable,
                 str(SCRIPTS_DIR / "render_report.py"),
-                "--data",
-                str(out_dir / "assets" / "diff-data.json"),
-                "--spec",
-                str(spec_path),
-                "--output",
-                str(html_path),
+                "--report-dir",
+                str(out_dir),
             ],
             cwd=self.repo,
         )
@@ -175,6 +171,27 @@ class OilDiffWorkflowTests(unittest.TestCase):
             cwd=self.repo,
         )
         self.assertIn("PASS: 0 errors", lint_res.stdout)
+
+        # Verify stray top-level file is rejected by lint_report.py
+        stray_file = out_dir / "stray-screenshot.png"
+        stray_file.write_text("dummy", encoding="utf-8")
+        stray_proc = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "lint_report.py"),
+                "--repo",
+                str(self.repo),
+                "--report-dir",
+                str(out_dir),
+            ],
+            cwd=self.repo,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+        self.assertNotEqual(stray_proc.returncode, 0)
+        self.assertIn("move stray files into assets/", stray_proc.stdout)
 
     def test_lint_catches_hype_words(self) -> None:
         out_dir = self.repo / ".oil-diff"

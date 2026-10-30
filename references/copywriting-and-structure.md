@@ -1,6 +1,6 @@
 # 文案与三层排版规范
 
-本规范用于 `oil-diff` 步骤 2：将原始 `diff-data.json` 转化为非代码作者也能迅速读懂的 `report-spec.json`。上级流程见 [SKILL.md](../SKILL.md)。
+本规范用于 `oil-diff` 步骤 2：将原始 `.oil-diff/assets/diff-data.json` 转化为非代码作者也能迅速读懂的 `.oil-diff/assets/report-spec.json`。上级流程见 [SKILL.md](../SKILL.md)。
 
 ## 一、 核心北极星：面向项目负责人与协作者汇报
 
@@ -58,15 +58,13 @@
 - **第二层（章内叙事：无框背景痛点与例子 + 可视化主舞台）**：章节标题下方直接用干净的无框正文排版写出 `problem` 与 `example`（不套米色方框，章内不画满宽 `border-top` 分割线），紧接着展示本章唯一的 HTML/CSS 可视化对比舞台。
 - **第三层（改法要点 + 右侧抽屉触发条）**：`1 / 2 / 3` 要点靠留白自然排列，每个要点下挂载轻量文件触发按钮（`button.diff-file`），点击后从页面右侧滑出 `div` 抽屉查看双栏代码对照。
 
-## 五、 `report-spec.json` 数据结构格式
+## 五、 `.oil-diff/assets/report-spec.json` 数据结构格式
 
 ```json
 {
   "title": "这次修改了哪 N 件事",
+  "eyebrow": "project-name / 改动汇报",
   "summary": "一两句话概括本轮修改聚焦的核心业务方向与解决的主要痛点。",
-  "relatedTitles": {
-    "2": "查看同步修改的其余 {count} 份关联文档"
-  },
   "fileVariants": {},
   "items": [
     {
@@ -80,21 +78,20 @@
       "fileIds": ["working:references/direction-workspace.md"],
       "diagramHtml": "<div class=\"visual-stage\">...</div>",
       "points": [
-        [
-          "只做一套方案时，由制作页面的 Agent 直接决定",
-          "原来内部还要先凑出几套候选方案……"
-        ]
+        {
+          "title": "只做一套方案时，由制作页面的 Agent 直接决定",
+          "copy": "原来内部还要先凑出几套候选方案……",
+          "diffs": [
+            {
+              "file": "working:references/direction-workspace.md",
+              "role": "合并单方案流程与结构检查要求。",
+              "before": [{"line": 25}],
+              "after": [{"line": 25}]
+            }
+          ]
+        }
       ],
-      "inlineDiffs": [
-        [
-          {
-            "file": "working:references/direction-workspace.md",
-            "role": "合并单方案流程与结构检查要求。",
-            "before": [{"line": 25}],
-            "after": [{"line": 25}]
-          }
-        ]
-      ]
+      "relatedTitle": "查看其余 {count} 个文件的对应修改"
     }
   ]
 }
