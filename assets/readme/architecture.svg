@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="390" viewBox="0 0 1200 390" role="img" aria-labelledby="title desc">
+  <title id="title">六类原生 HTML/CSS 可视化舞台模式</title>
+  <desc id="desc">根据业务改动类型选择流程并流图、多场景对照矩阵、标尺与取景工作台、路由与文件结构图、微缩界面正反对比或自动化检查防线卡。</desc>
+  <defs>
+    <pattern id="g-arch" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#DFD5C3" stroke-width="1" stroke-opacity="0.55"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="390" rx="26" fill="#FAF8F4"/>
+  <rect width="1200" height="390" rx="26" fill="url(#g-arch)"/>
+  <rect x="1" y="1" width="1198" height="388" rx="25" fill="none" stroke="#DFD5C3" stroke-width="1.5"/>
+
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif">
+    <!-- Row 1 -->
+    <g transform="translate(44 36)">
+      <rect width="352" height="146" rx="14" fill="#FFFDF9" stroke="#DFD5C3" stroke-width="1.5"/>
+      <rect x="20" y="18" width="112" height="24" rx="6" fill="#EFEADE"/>
+      <text x="76" y="35" text-anchor="middle" fill="#4A453D" font-size="13" font-weight="700">模式 01 · 流程</text>
+      <text x="20" y="68" fill="#1A1916" font-size="21" font-weight="750">流程并流与收敛对比</text>
+      <text x="20" y="96" fill="#4D4942" font-size="15">把串行排队的旧步骤与合并并行的新流程</text>
+      <text x="20" y="118" fill="#4D4942" font-size="15">左右对照，直观展示省掉的重复环节。</text>
+    </g>
+
+    <g transform="translate(424 36)">
+      <rect width="352" height="146" rx="14" fill="#FFFDF9" stroke="#DFD5C3" stroke-width="1.5"/>
+      <rect x="20" y="18" width="112" height="24" rx="6" fill="#EFEADE"/>
+      <text x="76" y="35" text-anchor="middle" fill="#4A453D" font-size="13" font-weight="700">模式 02 · 策略</text>
+      <text x="20" y="68" fill="#1A1916" font-size="21" font-weight="750">多场景触发对照矩阵</text>
+      <text x="20" y="96" fill="#4D4942" font-size="15">并排对比不同条件下的旧策略与新策略，</text>
+      <text x="20" y="118" fill="#4D4942" font-size="15">一眼看清按需执行、缓存复用或条件分支。</text>
+    </g>
+
+    <g transform="translate(804 36)">
+      <rect width="352" height="146" rx="14" fill="#FFFDF9" stroke="#DFD5C3" stroke-width="1.5"/>
+      <rect x="20" y="18" width="112" height="24" rx="6" fill="#EBF3EE"/>
+      <text x="76" y="35" text-anchor="middle" fill="#23533D" font-size="13" font-weight="700">模式 03 · 几何</text>
+      <text x="20" y="68" fill="#1A1916" font-size="21" font-weight="750">标尺与取景框工作台</text>
+      <text x="20" y="96" fill="#4D4942" font-size="15">带真实像素标尺、缩放倍率与虚线裁切框，</text>
+      <text x="20" y="118" fill="#4D4942" font-size="15">适合图像处理、坐标计算与布局尺寸改动。</text>
+    </g>
+
+    <!-- Row 2 -->
+    <g transform="translate(44 206)">
+      <rect width="352" height="146" rx="14" fill="#FFFDF9" stroke="#DFD5C3" stroke-width="1.5"/>
+      <rect x="20" y="18" width="112" height="24" rx="6" fill="#EBF3EE"/>
+      <text x="76" y="35" text-anchor="middle" fill="#23533D" font-size="13" font-weight="700">模式 04 · 架构</text>
+      <text x="20" y="68" fill="#1A1916" font-size="21" font-weight="750">路由与文件结构拆分图</text>
+      <text x="20" y="96" fill="#4D4942" font-size="15">展示单文件混写如何拆分为按业务领域分流</text>
+      <text x="20" y="118" fill="#4D4942" font-size="15">的树状模块，标出新增文件与已删除文件。</text>
+    </g>
+
+    <g transform="translate(424 206)">
+      <rect width="352" height="146" rx="14" fill="#FFFDF9" stroke="#DFD5C3" stroke-width="1.5"/>
+      <rect x="20" y="18" width="112" height="24" rx="6" fill="#EFEADE"/>
+      <text x="76" y="35" text-anchor="middle" fill="#4A453D" font-size="13" font-weight="700">模式 05 · 界面</text>
+      <text x="20" y="68" fill="#1A1916" font-size="21" font-weight="750">微缩界面正反做法对比</text>
+      <text x="20" y="96" fill="#4D4942" font-size="15">直接画出微缩 UI 窗口、工具栏、表格与状态</text>
+      <text x="20" y="118" fill="#4D4942" font-size="15">胶囊，对比散乱旧界面与统一后的新规范。</text>
+    </g>
+
+    <g transform="translate(804 206)">
+      <rect width="352" height="146" rx="14" fill="#FFFDF9" stroke="#DFD5C3" stroke-width="1.5"/>
+      <rect x="20" y="18" width="112" height="24" rx="6" fill="#F8ECEA"/>
+      <text x="76" y="35" text-anchor="middle" fill="#8F3B31" font-size="13" font-weight="700">模式 06 · 校验</text>
+      <text x="20" y="68" fill="#1A1916" font-size="21" font-weight="750">自动化检查三道防线卡</text>
+      <text x="20" y="96" fill="#4D4942" font-size="15">用源文档、错误引用与拦截状态徽章，直观</text>
+      <text x="20" y="118" fill="#4D4942" font-size="15">解释新增的测试套件具体挡住哪几类故障。</text>
+    </g>
+  </g>
+</svg>

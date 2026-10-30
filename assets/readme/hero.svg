@@ -1,0 +1,139 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">oil-diff：把零散的 Git 改动，变成人人看得懂的可视化汇报页</title>
+  <desc id="desc">将 Git Diff、提交范围或工作区修改转化为包含业务模块速览、前后对比图示、单行改动文件树与右侧原文对照抽屉的单文件 HTML 汇报页。</desc>
+  <defs>
+    <pattern id="paper-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#DFD5C3" stroke-width="1" stroke-opacity="0.65"/>
+    </pattern>
+    <clipPath id="hero-frame">
+      <rect width="1200" height="420" rx="28"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#hero-frame)">
+    <rect width="1200" height="420" rx="28" fill="#FAF8F4"/>
+    <rect width="1200" height="420" rx="28" fill="url(#paper-grid)"/>
+    <rect x="1" y="1" width="1198" height="418" rx="27" fill="none" stroke="#DFD5C3" stroke-width="2"/>
+
+    <!-- Left: Identity & Value -->
+    <g transform="translate(64 52)" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif">
+      <g transform="translate(0 0)">
+        <rect width="118" height="28" rx="6" fill="#EFEADE" stroke="#DFD5C3"/>
+        <text x="59" y="19" text-anchor="middle" fill="#524C42" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="14" font-weight="700">§ OIL-DIFF</text>
+        <text x="132" y="19" fill="#6E685F" font-size="15" font-weight="700" letter-spacing="2">VISUAL GIT CHANGE REPORT</text>
+      </g>
+
+      <rect x="0" y="120" width="290" height="22" rx="6" fill="#E6DAC3" fill-opacity="0.85"/>
+      <text x="0" y="130" fill="#1A1916" font-size="82" font-weight="800" letter-spacing="-3">oil-diff</text>
+
+      <text x="0" y="192" fill="#1A1916" font-size="30" font-weight="750">把零散的 Git 改动，</text>
+      <text x="0" y="234" fill="#1A1916" font-size="30" font-weight="750">变成人人看得懂的可视化汇报页。</text>
+
+      <text x="0" y="274" fill="#4D4942" font-size="18" font-weight="500">按业务事项归因 · 原生 HTML/CSS 对比图示 · 右侧滑出式原文抽屉</text>
+
+      <g transform="translate(0 302)" font-size="15" font-weight="650">
+        <rect width="136" height="36" rx="8" fill="#FFFDF9" stroke="#D8CEBC"/>
+        <circle cx="20" cy="18" r="5" fill="#2E6A4E"/>
+        <text x="34" y="23" fill="#2B2823">业务模块速览</text>
+
+        <g transform="translate(148 0)">
+          <rect width="154" height="36" rx="8" fill="#FFFDF9" stroke="#D8CEBC"/>
+          <circle cx="20" cy="18" r="5" fill="#B6483C"/>
+          <text x="34" y="23" fill="#2B2823">前后对比可视化</text>
+        </g>
+
+        <g transform="translate(314 0)">
+          <rect width="154" height="36" rx="8" fill="#FFFDF9" stroke="#D8CEBC"/>
+          <circle cx="20" cy="18" r="5" fill="#6E685F"/>
+          <text x="34" y="23" fill="#2B2823">零污染 .oil-diff</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Right: Project-Native Artifact Transformation (Raw Git Diff -> Warm Paper Report + Slide-over Drawer) -->
+    <g transform="translate(578 36)" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif">
+      <!-- Raw Git Diff Terminal Card (Back Layer) -->
+      <g transform="translate(0 12)">
+        <rect x="4" y="6" width="250" height="142" rx="14" fill="#1A1916" fill-opacity="0.12"/>
+        <rect width="250" height="142" rx="14" fill="#1E1D1A" stroke="#36332E"/>
+        <circle cx="20" cy="20" r="4.5" fill="#B6483C"/>
+        <circle cx="34" cy="20" r="4.5" fill="#C89D54"/>
+        <circle cx="48" cy="20" r="4.5" fill="#2E6A4E"/>
+        <text x="64" y="24" fill="#9E978B" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="12" font-weight="600">git diff --stat</text>
+        <text x="18" y="54" fill="#E6E1D6" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="13">29 files changed</text>
+        <text x="18" y="76" fill="#68B98F" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="13" font-weight="700">+556 insertions(+)</text>
+        <text x="18" y="98" fill="#E37B6F" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="13" font-weight="700">-115 deletions(-)</text>
+        <text x="18" y="124" fill="#8C8579" font-size="13">零散文件列表，看不出业务主线</text>
+      </g>
+
+      <!-- Warm Paper Chapter Card (Main Layer) -->
+      <g transform="translate(96 48)">
+        <rect x="6" y="10" width="464" height="292" rx="16" fill="#1A1916" fill-opacity="0.08"/>
+        <rect width="464" height="292" rx="16" fill="#FFFDF9" stroke="#DFD5C3" stroke-width="1.5"/>
+
+        <!-- Chapter Header -->
+        <rect x="22" y="20" width="48" height="24" rx="5" fill="#F2EDE2" stroke="#DFD5C3"/>
+        <text x="46" y="36" text-anchor="middle" fill="#5C564C" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="12" font-weight="700">§ 03</text>
+        <rect x="78" y="20" width="128" height="24" rx="6" fill="#EFEADE" stroke="#E2D9C8"/>
+        <text x="142" y="36" text-anchor="middle" fill="#4A453D" font-size="12" font-weight="700">截图工具 shoot.mjs</text>
+
+        <text x="22" y="68" fill="#1A1916" font-size="15.5" font-weight="750">先统一共有元素比例，再同坐标裁切</text>
+
+        <!-- Mini Visual Comparison Stage -->
+        <rect x="22" y="84" width="248" height="116" rx="10" fill="#FAF8F4" stroke="#E4DDD0"/>
+        <!-- Before mini box -->
+        <g transform="translate(32 96)">
+          <circle cx="5" cy="6" r="3.5" fill="#B6483C"/>
+          <text x="14" y="10" fill="#8F3B31" font-size="11.5" font-weight="700">修改前 · 比例不一</text>
+          <rect x="0" y="20" width="46" height="54" rx="5" fill="#FFFDF9" stroke="#DFD5C3"/>
+          <rect x="5" y="25" width="11" height="44" rx="2" fill="#E8DFCD"/>
+          <rect x="52" y="20" width="50" height="68" rx="5" fill="#FFFDF9" stroke="#DFD5C3"/>
+          <rect x="57" y="25" width="20" height="58" rx="2" fill="#E8DFCD"/>
+        </g>
+        <!-- After mini box -->
+        <g transform="translate(150 96)">
+          <circle cx="5" cy="6" r="3.5" fill="#2E6A4E"/>
+          <text x="14" y="10" fill="#23533D" font-size="11.5" font-weight="700">修改后 · 同宽裁切</text>
+          <rect x="0" y="20" width="48" height="60" rx="5" fill="#FFFDF9" stroke="#2E6A4E"/>
+          <rect x="5" y="25" width="16" height="50" rx="2" fill="#D5E6DC"/>
+          <rect x="54" y="20" width="48" height="60" rx="5" fill="#FFFDF9" stroke="#2E6A4E"/>
+          <rect x="59" y="25" width="16" height="50" rx="2" fill="#D5E6DC"/>
+          <rect x="3" y="36" width="96" height="28" rx="3" fill="none" stroke="#2E6A4E" stroke-dasharray="3 2"/>
+        </g>
+
+        <!-- File Trigger Button -->
+        <rect x="22" y="214" width="248" height="46" rx="10" fill="#EFE6D5" stroke="#BBA882" stroke-width="1.5"/>
+        <rect x="34" y="228" width="18" height="18" rx="3" fill="#F2CE3A"/>
+        <text x="58" y="242" fill="#1A1916" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="12.5" font-weight="700">scripts/shoot.mjs</text>
+        <text x="204" y="242" fill="#2E6A4E" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="12" font-weight="700">+93</text>
+        <text x="232" y="242" fill="#B6483C" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="12" font-weight="700">−27</text>
+
+        <!-- Slide-Over Diff Drawer (Overlapping Right Side) -->
+        <g transform="translate(282 14)">
+          <rect x="-4" y="4" width="170" height="264" rx="12" fill="#1A1916" fill-opacity="0.12"/>
+          <rect width="170" height="264" rx="12" fill="#FFFDF9" stroke="#C8B99E" stroke-width="1.5"/>
+          <text x="14" y="26" fill="#6E685F" font-size="11" font-weight="700">原文对照 · 右侧抽屉</text>
+          <rect x="14" y="36" width="142" height="1" fill="#E6DEC9"/>
+
+          <text x="14" y="56" fill="#1A1916" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="12" font-weight="700">shoot.mjs</text>
+
+          <!-- Old Hunk -->
+          <rect x="12" y="68" width="146" height="72" rx="7" fill="#FDF8F6" stroke="#E8CECA"/>
+          <text x="18" y="85" fill="#8F3B31" font-size="11" font-weight="700">修改前 · 03719ff</text>
+          <rect x="18" y="96" width="126" height="12" rx="3" fill="#F2CFC9"/>
+          <text x="22" y="106" fill="#6E2820" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="10">Math.min(640, ...)</text>
+          <rect x="18" y="116" width="94" height="10" rx="3" fill="#EADCD9"/>
+
+          <!-- New Hunk -->
+          <rect x="12" y="150" width="146" height="96" rx="7" fill="#F6FAF7" stroke="#C5DEC9"/>
+          <text x="18" y="167" fill="#23533D" font-size="11" font-weight="700">修改后 · f9c78e5</text>
+          <rect x="18" y="178" width="128" height="14" rx="3" fill="#CBE6D6"/>
+          <text x="22" y="189" fill="#1B4330" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="10">item.matchWidth / ...</text>
+          <rect x="18" y="198" width="118" height="14" rx="3" fill="#CBE6D6"/>
+          <text x="22" y="209" fill="#1B4330" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="10">crop: {x, y, w, h}</text>
+          <rect x="18" y="220" width="88" height="10" rx="3" fill="#DCE9E0"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

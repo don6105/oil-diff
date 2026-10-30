@@ -1,0 +1,8 @@
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+*.skill
+dist/
+node_modules/
+.oil-diff/
