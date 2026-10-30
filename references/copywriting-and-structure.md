@@ -55,10 +55,12 @@
 ## 四、 清爽三层排版结构（无横线切割、无框套框）
 
 - **第一层（大分区：独立章节书页卡 + 业务胶囊）**：左侧由 1 张首屏总览卡 + N 张独立业务章节卡（`.paper-card`）组成，卡片之间靠 `22px` 的 `32px` 网页网格画布留白自然分区，不把所有章节塞进同一个长白框里画横线切割。
-- **第二层（章内叙事：无框背景痛点与例子 + 可视化主舞台）**：章节标题下方直接用干净的无框正文排版写出 `problem` 与 `example`（不套米色方框，章内不画满宽 `border-top` 分割线），紧接着展示本章唯一的 HTML/CSS 可视化对比舞台。
+- **第二层（章内叙事：无框背景痛点与例子 + 可视化主舞台）**：`render_report.py` 会自动把每章的 `problem` 与 `example` 渲染在章节标题下方（请勿在 `diagramHtml` 里重复写 `<p class="problem">` 或 `<p class="example">`），紧接着根据结构化 `diagram` 字段生成带微缩界面、线框缩略图或分叉流程图的可视化对比舞台。
 - **第三层（改法要点 + 右侧抽屉触发条）**：`1 / 2 / 3` 要点靠留白自然排列，每个要点下挂载轻量文件触发按钮（`button.diff-file`），点击后从页面右侧滑出 `div` 抽屉查看双栏代码对照。
 
 ## 五、 `.oil-diff/assets/report-spec.json` 数据结构格式
+
+优先使用结构化 `"diagram"` 字段（支持 `"routing" | "comparison" | "scenarios" | "flow" | "alignment" | "diagnostics"` 六种内置微缩 UI 图示模板，详见 [visual-and-interaction.md](visual-and-interaction.md)），不要手写简陋的纯文字 `<span>` 充当图示：
 
 ```json
 {
@@ -76,7 +78,18 @@
       "problem": "以前制作一个产品工作区，要依次安排设计候选、结构检查、参考图比较……",
       "example": "比如只需要做一套工单后台：以前要先找几位助手依次选方案、查草图……",
       "fileIds": ["working:references/direction-workspace.md"],
-      "diagramHtml": "<div class=\"visual-stage\">...</div>",
+      "diagram": {
+        "type": "flow",
+        "beforeTitle": "修改前 · 串行排队逐项检查",
+        "beforeSteps": ["1. 选方案", "2. 查草图", "3. 强制第 2 轮复审"],
+        "afterTitle": "修改后 · 合并重复环节并行的流程",
+        "startNode": {"title": "首轮生成与自检", "copy": "直接按后台规范实现"},
+        "parallelTracks": [
+          {"symbol": "◉", "title": "视觉评审", "copy": "看画面与参考图对齐"},
+          {"symbol": "↗", "title": "UX 走查", "copy": "点页面试用交互状态"}
+        ],
+        "endNode": {"title": "按得分精准收尾", "copy": "≥8 分微调即停；≤7 分继续修硬伤"}
+      },
       "points": [
         {
           "title": "只做一套方案时，由制作页面的 Agent 直接决定",

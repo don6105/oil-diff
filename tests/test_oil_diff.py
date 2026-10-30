@@ -259,6 +259,66 @@ class OilDiffWorkflowTests(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0)
         self.assertIn("Forbidden hype/jargon word", proc.stdout)
 
+    def test_structured_diagrams_and_plain_text_diagram_lint(self) -> None:
+        out_dir = self.repo / ".oil-diff"
+        run_cmd(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "collect_diff.py"),
+                "--repo",
+                str(self.repo),
+                "--output",
+                str(out_dir),
+            ],
+            cwd=self.repo,
+        )
+        for dtype in ("routing", "comparison", "scenarios", "flow", "alignment", "diagnostics"):
+            spec = {
+                "title": "这次修改了哪 1 件事",
+                "summary": "调整了主流程说明与文件边界。",
+                "items": [
+                    {
+                        "number": 1,
+                        "module": "主流程",
+                        "navLabel": "主流程",
+                        "title": "优化了主流程说明与文件规则",
+                        "overview": "优化了主流程说明与文件规则，确保上下游一致。",
+                        "problem": "以前只有一份总说明，找起来费劲。",
+                        "example": "比如只改一处说明时还要翻完整篇文档。",
+                        "diagram": {
+                            "type": dtype,
+                            "branches": [{"title": "分支 A", "file": "SKILL.md", "copy": "说明"}],
+                            "scenarios": [{"title": "场景 A", "before": "以前", "after": "现在"}],
+                            "rows": [{"title": "检查 1", "file": "SKILL.md", "detail": "锚点", "verdict": "通过", "pass": True}],
+                        },
+                        "fileIds": [
+                            "working:SKILL.md",
+                            "working:references/guide.md",
+                            "working:README.md",
+                        ],
+                        "points": [],
+                    }
+                ],
+            }
+            spec_path = out_dir / "assets" / "report-spec.json"
+            spec_path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
+            run_cmd(
+                [sys.executable, str(SCRIPTS_DIR / "render_report.py"), "--report-dir", str(out_dir)],
+                cwd=self.repo,
+            )
+            lint_res = run_cmd(
+                [
+                    sys.executable,
+                    str(SCRIPTS_DIR / "lint_report.py"),
+                    "--repo",
+                    str(self.repo),
+                    "--report-dir",
+                    str(out_dir),
+                ],
+                cwd=self.repo,
+            )
+            self.assertIn("PASS: 0 errors", lint_res.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

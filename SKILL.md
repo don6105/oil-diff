@@ -49,13 +49,12 @@ metadata:
 
 若目标仓库改动较大，可将 `.oil-diff/assets/diff-data.json` 与两份参考资料交给独立子 Agent 起草或审校 `.oil-diff/assets/report-spec.json`，主 Agent 负责复核业务准确性。
 
-### 3. 构建原生 HTML/CSS 可视化舞台
+### 3. 配置结构化微缩 UI 可视化舞台
 
-先读取 [视觉风格、可视化模式与交互规范](references/visual-and-interaction.md)。为每件业务事项编写对应的 `diagramHtml`（放入 `.oil-diff/assets/report-spec.json` 的每个章节项中）：
+先读取 [视觉风格、可视化模式与交互规范](references/visual-and-interaction.md)。在 `.oil-diff/assets/report-spec.json` 的每个章节项中配置结构化 `"diagram"` 对象（优先使用结构化 JSON，不要手写简陋的纯文字 `<span>` 充当 `diagramHtml`）：
 
-- 使用原生 HTML/CSS 网格与弹性布局加微型矢量连接线（主要字号 `12px–13.5px`），画出真实界面控件、文件节点、像素标尺或流程分叉，直观对比「修改前」与「修改后」。
-- 根据事项类型从 6 类标准舞台模式中选择最贴切的一种：流程并流图、多场景对照矩阵、标尺与取景工作台、路由与文件结构图、微缩界面正反对比、自动化检查防线卡。
-- 禁止使用整幅大字号（`20px+`）的粗糙 SVG 画板代替 HTML/CSS 排版。
+- 根据事项类型从 6 类内置微缩 UI 模式中选择最贴切的一种（`"type": "routing" | "comparison" | "scenarios" | "flow" | "alignment" | "diagnostics"`），由渲染器确定性生成带文件图标、页面线框缩略图、微缩后台窗口、SVG 分叉合并线或像素标尺的「修改前 vs 修改后」可视化舞台。
+- 如需自定义 `diagramHtml`，必须严格遵循内置网格列数并包含微缩视觉图元（如 `<svg`、`.domain-wire`、`.admin-window`、`.shot-window`），禁止只塞纯文字色块，也不要在 `diagramHtml` 内重复粘贴 `<p class="problem">` 或 `<p class="example">`。
 
 ### 4. 渲染自包含 HTML 汇报页
 

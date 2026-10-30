@@ -19,11 +19,19 @@
    - 章节签（`§ 01`）、业务模块胶囊（`.module-badge`）、书页序号框（`.nav-number`）与文件树高亮统一使用暖琥珀金体系（`#8a6116` / `#f6ebd2`），不引入刺眼的彩虹多色编号；
    - 柔和砖红（`#9e3b24` / `#fbf1ee`）与松石绿（`#216343` / `#eef6f1`）仅用于表达「修改前 / 删除（`−M`）」与「修改后 / 新增（`+N`）」。
 
-## 二、 6 类原生 HTML/CSS 可视化舞台模式
+## 二、 6 类原生 HTML/CSS 可视化舞台模式（推荐直接写结构化 `diagram` JSON）
 
-每章必须包含一个 `.visual-stage` 可视化对比舞台。**严禁使用 `1100×680` 大字号粗体 SVG 画板**，统一使用原生 HTML/CSS Grid/Flexbox 排版（主要字号 `12px–13.5px`，带真实 `1px` 细描边、等宽代码标签与小型 SVG 连接线/文件图标），画出真实的作用对象与变化过程。
+每章必须包含一个 `.visual-stage` 可视化对比舞台。**严禁使用 `1100×680` 大字号粗体 SVG 画板**。
 
-根据章节业务类型选用以下 6 种标准舞台模式（对应 CSS 类已内置于 [assets/report.css](../assets/report.css)）：
+为了避免手写复杂 HTML 嵌套导致 Flex/Grid 挤压变形，**优先在 `.oil-diff/assets/report-spec.json` 的每个章节项中使用结构化 `"diagram"` 字段**，由 `scripts/render_report.py` 确定性生成对应的 HTML/CSS：
+
+- **`type: "routing"`（路由分流与文件架构图）**：传入 `beforeTitle`、`beforeCopy`、`entryTitle`、`entryCopy` 与 `branches: [{"title": "...", "copy": "..."}]`。
+- **`type: "comparison"`（界面与规范正反对比）**：传入 `beforeTitle`、`beforeItems: ["...", "..."]`、`afterTitle` 与 `afterItems: ["...", "..."]`。
+- **`type: "scenarios"`（多场景对照矩阵）**：传入 `scenarios: [{"title": "...", "before": "...", "after": "..."}]`。
+- **`type: "flow"`（流程精简与并流图）**：传入 `beforeSteps: [{"label": "...", "removed": true}]` 与 `afterSummary: "..."`。
+- **`type: "diagnostics"`（自动化检查防线卡）**：传入 `rows: [{"input": "...", "verdict": "✓ PASS ...", "pass": true}]`。
+
+如果需要编写更精细的自定义 `diagramHtml`，根据章节业务类型选用以下 6 种标准舞台模式（对应 CSS 类已内置于 [assets/report.css](../assets/report.css)）：
 
 ### 1. 流程精简与并流图（`.serial-flow` + `.parallel-flow`）
 - **适用场景**：审批流、构建流水线、多阶段检查合并、串行改并行。

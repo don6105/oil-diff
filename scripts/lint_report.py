@@ -23,6 +23,20 @@ FORBIDDEN_HYPE_WORDS = (
     "颗粒度",
     "护城河",
     "组合拳",
+    "解耦",
+    "契约",
+)
+
+VISUAL_PRIMITIVE_TOKENS = (
+    "<svg",
+    "domain-wire",
+    "admin-window",
+    "shot-window",
+    "menu-filmstrip",
+    "snapshot-grid",
+    "run-history",
+    "track-junction",
+    "artifact-file",
 )
 
 FORBIDDEN_NOISE_PHRASES = (
@@ -69,6 +83,8 @@ def collect_spec_texts(spec: dict[str, object]) -> list[str]:
                 str(item.get("navLabel", "")),
                 str(item.get("title", "")),
                 str(item.get("overview", "")),
+                str(item.get("problem", "")),
+                str(item.get("example", "")),
             ]
         )
         for pt in item.get("points", []):
@@ -166,6 +182,14 @@ def lint_report(repo: Path, report_dir: Path) -> tuple[list[str], list[str]]:
 
     # 4. Single-file point must not render .file-explanation on the card trigger
     for idx, item in enumerate(items, 1):
+        if item.get("diagramHtml") and not any(tok in str(item["diagramHtml"]) for tok in VISUAL_PRIMITIVE_TOKENS):
+            errors.append(
+                f"Item {idx} uses plain-text diagramHtml without visual primitives; use structured 'diagram' (routing/comparison/scenarios/flow/alignment/diagnostics) instead."
+            )
+        if not item.get("diagram") and not item.get("diagramHtml"):
+            warnings.append(
+                f"Item {idx} omits structured 'diagram' spec; add 'diagram': {{'type': ...}} for richer miniature UI visuals."
+            )
         for p_idx, pt in enumerate(item.get("points", []), 1):
             diffs = pt.get("diffs", [])
             if len(diffs) == 1:
