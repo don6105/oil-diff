@@ -49,22 +49,26 @@ metadata:
 
 若目标仓库改动较大，可将 `.oil-diff/assets/diff-data.json` 与两份参考资料交给独立子 Agent 起草或审校 `.oil-diff/assets/report-spec.json`，主 Agent 负责复核业务准确性。
 
-### 3. 配置结构化微缩 UI 可视化舞台
+### 3. 配置实拍截图与微缩可视化舞台（配图零段落）
 
-先读取 [视觉风格、可视化模式与交互规范](references/visual-and-interaction.md)。在 `.oil-diff/assets/report-spec.json` 的每个章节项中配置结构化 `"diagram"` 对象（优先使用结构化 JSON，不要手写简陋的纯文字 `<span>` 充当 `diagramHtml`）：
+先读取 [视觉风格、可视化模式与交互规范](references/visual-and-interaction.md)。在 `.oil-diff/assets/report-spec.json` 的每个章节项中配置结构化 `"diagram"` 对象（遵循「配图是配图，文字是文字」，`<figure class="diagram">` 内严禁出现 `<p>` 段落长句）：
 
-- 根据事项类型从 6 类内置微缩 UI 模式中选择最贴切的一种（`"type": "routing" | "comparison" | "scenarios" | "flow" | "alignment" | "diagnostics"`），由渲染器确定性生成带文件图标、页面线框缩略图、微缩后台窗口、SVG 分叉合并线或像素标尺的「修改前 vs 修改后」可视化舞台。
-- 如需自定义 `diagramHtml`，必须严格遵循内置网格列数并包含微缩视觉图元（如 `<svg`、`.domain-wire`、`.admin-window`、`.shot-window`），禁止只塞纯文字色块，也不要在 `diagramHtml` 内重复粘贴 `<p class="problem">` 或 `<p class="example">`。
+- **优先嵌入真实截图（`type: "screenshots"` 或 `scenarios` 卡片的 `src`）**：当改动涉及页面 UI、终端输出，或项目/Agent 可通过浏览器工具截取画面时，将图片保存到 `<output>/assets/shots/`，使用 `"type": "screenshots"`（支持 `mode: "slider"` 拖拽滑块对比、`"pair"` 左右双图对比、`"gallery"` 多图画廊，以及点击放大 Lightbox）。
+- **无实拍图时选用 5 类纯视觉积木**：从 `"type": "routing" | "scenarios" | "flow" | "schema" | "diagnostics"`（或 `"comparison" | "alignment"`）中选择与章节主题 100% 对应的结构化模式，由渲染器生成文件路由树、真实控件标本（柱状图/下拉框/焦点环）、流程并流图、数据结构/API 字段对比（`schema`）或三段式检查管道。
+- 如需自定义 `diagramHtml`，必须包含微缩视觉图元且只放 2～10 字的极简短标签，严禁塞入 `<p>` 段落句子。
 
-### 4. 渲染自包含 HTML 汇报页
+### 4. 渲染自包含 HTML 汇报页（含一屏看板与核心必看漏斗）
 
 运行 [scripts/render_report.py](scripts/render_report.py)，将 `.oil-diff/assets/diff-data.json`、`.oil-diff/assets/report-spec.json` 与内置静态资源合成为单文件页面：
 
 ```text
-<python> scripts/render_report.py --data <output>/assets/diff-data.json --spec <output>/assets/report-spec.json --output <output>/index.html
+<python> scripts/render_report.py --report-dir <output>
 ```
 
-渲染器会自动校验所有改动文件是否均已归入章节、核对摘录行号是否存在，并嵌入 [assets/report.css](assets/report.css) 与 [assets/report.js](assets/report.js)，生成带 `32px` 网页网格线背景、暖纸独立章节书页卡、顶部吸附章节导航、单行改动文件树与右侧滑出式原文对照抽屉的 `index.html`。
+渲染器会自动校验所有改动文件是否均已归入章节、核对摘录行号是否存在，并嵌入 [assets/report.css](assets/report.css) 与 [assets/report.js](assets/report.js)，生成包含以下核心能力的 `index.html`：
+- **双视图切换（`[ ⊞ 一屏看板 | ☰ 详细长文 ]`）**：支持一键或通过 `?view=bento` 切换到 Bento Grid 一屏总览看板，一屏看清全部事项、实拍截图/架构图与核心改动文件；
+- **改动爆炸半径漏斗（`🎯 核心必看` vs `📎 外围同步`）**：自动从全部改动文件中提炼各章要点的核心代码文件作为首屏直达胶囊，将顺手同步的外围引用文件归入折叠区；
+- **单行改动文件树与右侧原文对照抽屉**：点击任一核心文件胶囊、章节文件条或右侧文件树，从右侧滑出 `720px` 代码对照抽屉。
 
 ### 5. 质量核验与视觉检查
 

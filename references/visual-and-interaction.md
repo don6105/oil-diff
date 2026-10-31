@@ -31,12 +31,19 @@
 
 优先在 `.oil-diff/assets/report-spec.json` 的每个章节项中使用结构化 `"diagram"` 字段，由 `scripts/render_report.py` 确定性生成：
 
+- **`type: "screenshots"`（真实实拍截图对比与拖拽滑块）**：
+  - 优先用于 UI 改造、前端组件、可视化页面或 CLI 输出变更。将截图保存在 `<repo>/.oil-diff/assets/shots/`，在 `report-spec.json` 中使用相对路径 `assets/shots/xxx.png`。
+  - 支持三种展示模式（`mode`）：
+    - `mode: "slider"`（默认，需传入 `before: {"src", "title", "tag"}` 与 `after: {"src", "title", "tag"}`）：生成可左右拖拽的交互式滑块对比舞台（`.shot-slider`）与下方并排点击放大卡片；
+    - `mode: "pair"`（传入 `before` 与 `after`）：生成左右并排的实拍窗口对照卡（`.shot-pair-grid`）；
+    - `mode: "gallery"`（传入 `items: [{"src", "title", "tag", "state"}]`）：生成 2 列或 3 列实拍画面陈列卡。
+  - 所有实拍截图默认绑定点击放大灯箱（`#shot-lightbox`），点击可全屏查看高清原图。
 - **`type: "routing"`（路由分流与文件架构图）**：传入 `beforeTitle`、`beforeFile`、`beforeNote`、`afterTitle`、`entryFile`、`entryTag` 与 `branches: [{"wire": "marketing|workspace|content|play", "title": "4～6字短名", "file": "文件名"}]`（卡片内只放线框缩略图 + 短名 + 文件名，不写长句）。
-- **`type: "comparison"`（微缩界面正反对比）**：传入 `beforeTitle`、`afterTitle` 与可选的 `tableRows`。左侧展示高低不齐控件与混用黑框的反面窗口，右侧展示同行等高工具栏、分段滑块与对齐表格的正面窗口。
-- **`type: "scenarios"`（三列纯视觉实物对照卡）**：传入 `cards: [{"kind": "chart|select|focus", "title": "4～6字短标题", "badTag": "× 6～10字痛点标签", "goodTag": "✓ 6～10字改后标签"}]`。每张卡只渲染上/下两个真实微缩控件盒与短标签，**零段落文字**。
+- **`type: "scenarios"`（三列纯视觉实物 / 混合实拍对照卡）**：传入 `cards: [{"kind": "chart|select|focus", "title": "4～6字短标题", "badTag": "× 6～10字痛点标签", "goodTag": "✓ 6～10字改后标签"}]`，单张卡也可直接传入 `"src": "assets/shots/xxx.png"` 与 `"tag": "✓ 简短标签"` 展示真实截图。每张卡**零段落文字**。
 - **`type: "flow"`（流程精简与并流图）**：传入 `beforeSteps: ["1. 短标签", "2. × 被删环节"]`、`startNode`、`tracks` 与 `endNode`（每个节点 `tag` 控制在 10 字以内）。
-- **`type: "alignment"`（标尺对齐与取景工作台）**：展示 `120 px ≠ 240 px` 比例失调窗口与 `matchWidth: 240` 同比例缩放裁切窗口。
+- **`type: "schema"`（数据结构 / API 载荷 / 配置字段对比）**：传入 `beforeTitle`、`afterTitle`、`beforeFields: [{"key": "字段名", "val": "旧类型或旧值", "del": true}]` 与 `afterFields: [{"key": "字段名", "val": "新类型或新值", "add": true}]`，用于后端接口、数据库表结构、TypeScript 类型与 JSON 配置改动。
 - **`type: "diagnostics"`（三段式检查管道）**：传入 `testFile` 与 `rows: [{"left": "源模块", "edge": "动作", "right": "目标规则", "verdict": "✓ 8 项全绿", "pass": true}]`。
+- **`type: "comparison"` / `type: "alignment"`**：内置微缩后台正反对比窗口与像素标尺对齐工作台。
 
 如果需要编写更精细的自定义 `diagramHtml`，根据章节业务类型选用以下 6 种标准舞台模式（对应 CSS 类已内置于 [assets/report.css](../assets/report.css)）：
 

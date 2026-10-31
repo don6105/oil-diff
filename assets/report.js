@@ -291,7 +291,16 @@ function closeDrawer() {
   if (location.hash.startsWith('#diff-')) history.replaceState(null, '', '#requirement-' + current);
   moveDrawer(false);
 }
+function setViewMode(mode) {
+  const isBento = mode === 'bento';
+  document.body.classList.toggle('is-bento-mode', isBento);
+  for (const btn of document.querySelectorAll('[data-view-mode]')) {
+    btn.classList.toggle('is-active', btn.dataset.viewMode === mode);
+    btn.setAttribute('aria-pressed', String(btn.dataset.viewMode === mode));
+  }
+}
 function jumpToSection(number) {
+  if (document.body.classList.contains('is-bento-mode')) setViewMode('reader');
   const token = ++navigation;
   setCurrent(number);
   history.replaceState(null, '', '#requirement-' + number);
@@ -305,7 +314,9 @@ function jumpToFileTarget(target, trigger) {
   const token = ++navigation;
   setCurrent(target.requirement, false);
   openDrawer(target, trigger);
-  scrollToTarget(document.getElementById(target.id), token, true);
+  if (!document.body.classList.contains('is-bento-mode')) {
+    scrollToTarget(document.getElementById(target.id), token, true);
+  }
 }
 for (const button of document.querySelectorAll('.diff-file')) {
   button.addEventListener('click', () => {
@@ -313,6 +324,34 @@ for (const button of document.querySelectorAll('.diff-file')) {
     openDrawer(targetMap.get(button.closest('.diff-card').id), button, {toggle: true});
   });
 }
+for (const btn of document.querySelectorAll('[data-view-mode]')) {
+  btn.addEventListener('click', () => setViewMode(btn.dataset.viewMode));
+}
+for (const btn of document.querySelectorAll('[data-bento-jump]')) {
+  btn.addEventListener('click', () => jumpToSection(Number(btn.dataset.bentoJump)));
+}
+for (const slider of document.querySelectorAll('.shot-slider-input')) {
+  slider.addEventListener('input', () => {
+    slider.closest('.shot-slider').style.setProperty('--split', slider.value + '%');
+  });
+}
+const lightbox = document.getElementById('shot-lightbox');
+if (lightbox) {
+  const lbImg = lightbox.querySelector('img');
+  const lbCap = lightbox.querySelector('.shot-lightbox-caption');
+  const closeLb = () => {lightbox.hidden = true;};
+  for (const trig of document.querySelectorAll('[data-lightbox-src]')) {
+    trig.addEventListener('click', () => {
+      lbImg.src = trig.dataset.lightboxSrc;
+      lbImg.alt = trig.dataset.lightboxCaption || '';
+      if (lbCap) lbCap.textContent = trig.dataset.lightboxCaption || '';
+      lightbox.hidden = false;
+    });
+  }
+  lightbox.addEventListener('click', closeLb);
+  addEventListener('keydown', event => {if (event.key === 'Escape' && !lightbox.hidden) closeLb();});
+}
+if (new URLSearchParams(location.search).get('view') === 'bento') setViewMode('bento');
 previousButton.addEventListener('click', () => {
   const target = targets[targets.indexOf(drawerTarget) - 1];
   if (target) {++navigation; openDrawer(target, null, {focus: false});}

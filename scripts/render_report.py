@@ -297,11 +297,43 @@ def mini_shot_window(kind: str = "", side: int = 40, label: str = "项目") -> s
     )
 
 
+def shot_frame_html(src: str, title: str, tag: str, good: bool = True) -> str:
+    cls = "is-good" if good else "is-bad"
+    dot = '<span class="state-dot"></span>'
+    cap = f"{title} · {tag}" if tag else title
+    tag_html = f'<span class="vis-tag">{e(tag)}</span>' if tag else ""
+    return (
+        f'<div class="shot-frame {cls}">'
+        f'<div class="shot-frame-bar"><span>{dot} {e(title)}</span>'
+        '<span class="shot-zoom-hint">🔍 点击放大</span></div>'
+        f'<button type="button" class="shot-zoom-trigger" data-lightbox-src="{e(src)}" data-lightbox-caption="{e(cap)}">'
+        f'<img src="{e(src)}" alt="{e(title)}" loading="lazy"></button>'
+        f"{tag_html}</div>"
+    )
+
+
 def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
     kind = str(sc.get("kind", "")).lower()
     title = str(sc.get("title", ""))
     bad_tag = str(sc.get("badTag") or sc.get("beforeTag") or "")
     good_tag = str(sc.get("goodTag") or sc.get("afterTag") or "")
+    shot_src = str(sc.get("src") or sc.get("afterSrc") or "")
+    before_src = str(sc.get("beforeSrc") or "")
+
+    if before_src and shot_src:
+        return (
+            f'<div class="vis-pair-stack">'
+            f'<div class="vis-box is-bad"><button type="button" class="shot-zoom-trigger" data-lightbox-src="{e(before_src)}" data-lightbox-caption="{e(title + " · " + bad_tag)}"><img src="{e(before_src)}" alt="{e(title)}" loading="lazy"></button><span class="vis-tag">{e(bad_tag)}</span></div>'
+            f'<div class="vis-box is-good"><button type="button" class="shot-zoom-trigger" data-lightbox-src="{e(shot_src)}" data-lightbox-caption="{e(title + " · " + good_tag)}"><img src="{e(shot_src)}" alt="{e(title)}" loading="lazy"></button><span class="vis-tag">{e(good_tag)}</span></div></div>'
+        )
+    if shot_src:
+        g_lbl = good_tag or bad_tag or "✓ 实机截图对照"
+        return (
+            f'<div class="vis-box is-good" style="flex:1">'
+            f'<button type="button" class="shot-zoom-trigger" style="aspect-ratio:4/3" data-lightbox-src="{e(shot_src)}" data-lightbox-caption="{e(title + " · " + g_lbl)}">'
+            f'<img src="{e(shot_src)}" alt="{e(title)}" loading="lazy"></button>'
+            f'<span class="vis-tag">{e(g_lbl)}</span></div>'
+        )
 
     if kind == "chart" or any(k in title for k in ("图", "柱", "轴")):
         bad_svg = (
@@ -552,6 +584,68 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         )
         return f'<div class="visual-stage"><div class="alignment-grid">{old_col}{new_col}</div></div>'
 
+    if dtype == "screenshots":
+        mode = str(diag.get("mode", "pair")).lower()
+        b_src = str(diag.get("beforeSrc") or "")
+        a_src = str(diag.get("afterSrc") or diag.get("src") or "")
+        b_title = str(diag.get("beforeTitle") or "修改前")
+        a_title = str(diag.get("afterTitle") or "修改后")
+        b_tag = str(diag.get("beforeTag") or "")
+        a_tag = str(diag.get("afterTag") or "")
+        if mode == "slider" and b_src and a_src:
+            pair_cards = (
+                shot_frame_html(b_src, b_title, b_tag, False)
+                + shot_frame_html(a_src, a_title, a_tag, True)
+            )
+            return (
+                f'<div class="visual-stage"><div class="shot-slider-wrap">'
+                f'<div class="shot-slider" style="--split:50%">'
+                f'<img src="{e(a_src)}" alt="{e(a_title)}" loading="lazy">'
+                f'<div class="shot-slider-before"><img src="{e(b_src)}" alt="{e(b_title)}" loading="lazy"></div>'
+                f'<span class="shot-slider-badge is-before">{e(b_title)}</span>'
+                f'<span class="shot-slider-badge is-after">{e(a_title)}</span>'
+                f'<div class="shot-slider-line"></div><div class="shot-slider-knob">↔</div>'
+                f'<input type="range" min="5" max="95" value="50" class="shot-slider-input" aria-label="左右拖动对比修改前后截图">'
+                f"</div>"
+                f'<div class="shot-pair-grid">{pair_cards}</div></div></div>'
+            )
+        if b_src and a_src:
+            return (
+                f'<div class="visual-stage"><div class="shot-pair-grid">'
+                f"{shot_frame_html(b_src, b_title, b_tag, False)}"
+                f"{shot_frame_html(a_src, a_title, a_tag, True)}</div></div>"
+            )
+        shots = list(diag.get("shots") or [])
+        cols = "vis-grid-3" if len(shots) >= 3 else "shot-pair-grid"
+        frames = "".join(
+            shot_frame_html(
+                str(s.get("src", "")),
+                str(s.get("title", f"截图 {i + 1}")),
+                str(s.get("tag", "")),
+                bool(s.get("good", True)),
+            )
+            for i, s in enumerate(shots)
+        )
+        return f'<div class="visual-stage"><div class="{cols}">{frames}</div></div>'
+
+    if dtype == "schema":
+        b_title = str(diag.get("beforeTitle") or "修改前 · 旧结构")
+        a_title = str(diag.get("afterTitle") or "修改后 · 新结构")
+        b_rows = "".join(
+            f'<div class="schema-row is-del"><code>− {e(r)}</code></div>'
+            for r in diag.get("beforeRows", [])
+        )
+        a_rows = "".join(
+            f'<div class="schema-row is-add"><code>+ {e(r)}</code></div>'
+            for r in diag.get("afterRows", [])
+        )
+        return (
+            f'<div class="visual-stage"><div class="schema-diff">'
+            f'<div class="schema-box is-bad"><div class="schema-head">{e(b_title)}</div><div class="schema-rows">{b_rows}</div></div>'
+            f'<div class="schema-box is-good"><div class="schema-head">{e(a_title)}</div><div class="schema-rows">{a_rows}</div></div>'
+            f"</div></div>"
+        )
+
     if dtype == "diagnostics":
         test_file = str(diag.get("testFile", "tests/test_domain_boundaries.py"))
         rows_html = ""
@@ -674,14 +768,58 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
     summary = str(spec.get("summary") or "")
 
     metadata = (
+        f'<div class="header-controls">'
         f'<div class="report-meta"><span>{data["uniquePaths"]} 个文件 '
         f"<b>+{total_add}</b> <i>−{total_delete}</i></span>"
         f"<code>{e(range_chain)}</code></div>"
+        f'<div class="view-switch" role="group" aria-label="视图模式">'
+        f'<button type="button" class="view-btn" data-view-mode="bento" aria-pressed="false">⊞ 一屏看板</button>'
+        f'<button type="button" class="view-btn is-active" data-view-mode="reader" aria-pressed="true">☰ 详细长文</button>'
+        f"</div></div>"
     )
+
+    # Compute core files (referenced directly in points[].diffs) vs peripheral sync files
+    core_fids: list[str] = []
+    for item in spec_items:
+        for pt in item.get("points", []):
+            if isinstance(pt, dict):
+                for d in pt.get("diffs", []):
+                    fid = str(d.get("file", ""))
+                    if fid in files and fid not in core_fids:
+                        core_fids.append(fid)
+    if not core_fids:
+        core_fids = [str(fid) for item in spec_items for fid in item.get("fileIds", [])[:2] if str(fid) in files]
+    core_paths = {str(files[fid]["path"]) for fid in core_fids}
+    all_paths = {str(f["path"]) for f in files.values()}
+    sync_count = max(0, len(all_paths - core_paths))
+
+    core_pills_html = "".join(
+        f'<button type="button" class="core-pill" data-file-jump="{e(fid)}" title="点击查看 {e(files[fid]["path"])} 原文对照">'
+        f'{file_icon(str(files[fid]["path"]))}<span>{e(files[fid]["path"])}</span>'
+        f'<b>+{files[fid]["add"]}</b><i>−{files[fid]["delete"]}</i></button>'
+        for fid in core_fids
+    )
+    sync_row_html = (
+        f'<div class="blast-row">'
+        f'<span class="blast-badge is-sync">📎 外围同步 ({sync_count})</span>'
+        f'<span class="sync-summary">其余 {sync_count} 个顺手同步的引用、清单与配置文件已自动归入各章底部折叠条，Review 时优先看上方 {len(core_fids)} 个核心文件即可。</span>'
+        f"</div>"
+        if sync_count > 0
+        else ""
+    )
+    blast_html = (
+        f'<div class="blast-funnel">'
+        f'<div class="blast-row">'
+        f'<span class="blast-badge is-core">🎯 核心必看 ({len(core_fids)})</span>'
+        f'<div class="core-pills">{core_pills_html}</div></div>'
+        f"{sync_row_html}</div>"
+    )
+
     intro = (
         f'<header class="intro paper-card"><div class="eyebrow">{e(eyebrow)}</div>'
         f'<div class="title-row"><h1>{e(title)}</h1>{metadata}</div>'
         f"<p>{e(summary)}</p>"
+        f"{blast_html}"
         f'<nav class="overview-nav" aria-label="事项速览">'
     )
     for n, item in enumerate(spec_items, 1):
@@ -694,11 +832,12 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         )
     intro += "</nav></header>"
 
+    bento_cards: list[str] = []
     sticky = '<div class="sticky-nav-host" aria-hidden="true" inert><nav class="sticky-chapter-nav" aria-label="章节快速导航">'
     for n, item in enumerate(spec_items, 1):
         nav_label = str(item.get("navLabel") or item.get("module") or f"事项 {n}")
         sticky += f'<a href="#requirement-{n}" data-requirement-link="{n}"><span>§ {n:02d}</span>{e(nav_label)}</a>'
-    body = sticky + "</nav></div>" + intro
+    chapters_html = ""
 
     for n, item in enumerate(spec_items, 1):
         item_file_ids = [str(fid) for fid in item.get("fileIds", [])]
@@ -712,7 +851,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         example_text = str(item.get("example") or "").strip()
         problem_html = f'<p class="problem">{e(problem_text)}</p>' if problem_text else ""
         example_html = f'<p class="example"><span>例子</span>{e(example_text)}</p>' if example_text else ""
-        body += (
+        chapters_html += (
             f'<section class="requirement paper-card" id="requirement-{n}" data-requirement="{n}">'
             f'<header class="section-header"><div class="chapter-topline">'
             f'<span class="section-tag">§ {n:02d}</span>'
@@ -732,7 +871,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
                 pt_title = str(pt.get("title", ""))
                 pt_copy = str(pt.get("copy", ""))
                 diffs = pt.get("diffs", [])
-            body += (
+            chapters_html += (
                 f'<section class="change-point" id="change-{n}-{j}">'
                 f"<h3><span>{j}</span>{e(pt_title)}</h3>"
                 f'<p class="point-copy">{e(pt_copy)}</p>'
@@ -748,7 +887,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
                 before_rows = select_rows(f, "before", d.get("before"))
                 after_rows = select_rows(f, "after", d.get("after"))
                 raw_role = str(d.get("role", "")).strip() or None
-                body += diff_card(
+                chapters_html += diff_card(
                     n,
                     f,
                     role=raw_role if multi else None,
@@ -759,8 +898,8 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
                     drawer_role=raw_role,
                 )
                 used.add(fid)
-            body += "</section>"
-        body += "</div>"
+            chapters_html += "</section>"
+        chapters_html += "</div>"
 
         extra = [files[fid] for fid in item_file_ids if fid not in used]
         if extra:
@@ -768,7 +907,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
             rel_template = str(item.get("relatedTitle") or "查看其余 {count} 个文件的对应修改")
             label = rel_template.format(count=count)
             names = "、".join(list(dict.fromkeys(str(f["name"]) for f in extra))[:2])
-            body += (
+            chapters_html += (
                 f'<details class="related-files" id="related-{n}">'
                 f"<summary><span>{e(label)}<small>（{e(names)} 等）</small></span>{CHEVRON_SVG}</summary>"
                 f'<div class="fold-content" data-fold-content><div class="related-file-list">'
@@ -782,9 +921,35 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
                     if repeated[str(f["path"])] > 1
                     else None
                 )
-                body += diff_card(n, f, variant=variant)
-            body += "</div></div></details>"
-        body += "</section>"
+                chapters_html += diff_card(n, f, variant=variant)
+            chapters_html += "</div></div></details>"
+        chapters_html += "</section>"
+
+        item_core = list(used) or item_file_ids[:2]
+        bento_pills = "".join(
+            f'<button type="button" class="core-pill" data-file-jump="{e(fid)}">'
+            f'{file_icon(str(files[fid]["path"]))}<span>{e(files[fid]["name"])}</span>'
+            f'<b>+{files[fid]["add"]}</b><i>−{files[fid]["delete"]}</i></button>'
+            for fid in item_core[:3]
+        )
+        if extra:
+            bento_pills += f'<span class="bento-files-label">+{len(extra)} 个关联文件</span>'
+        hero_cls = " is-hero" if (len(spec_items) % 2 == 1 and n == 1) else ""
+        bento_cards.append(
+            f'<article class="bento-card{hero_cls}">'
+            f'<div class="bento-top"><div class="bento-badges">'
+            f'<span class="section-tag">§ {n:02d}</span>'
+            f'<span class="module-badge">{e(item.get("module", ""))}</span></div>'
+            f'<button type="button" class="bento-expand" data-bento-jump="{n}">展开详情 ↗</button></div>'
+            f'<h3>{e(item.get("title", ""))}</h3>'
+            f'<p class="bento-overview">{e(item.get("overview", ""))}</p>'
+            f'<div class="bento-visual">{diag_html}</div>'
+            f'<div class="bento-files"><span class="bento-files-label">核心文件：</span>{bento_pills}</div>'
+            f"</article>"
+        )
+
+    bento_section = f'<section class="bento-deck" id="bento-deck" aria-label="一屏看板">{"".join(bento_cards)}</section>'
+    body = sticky + "</nav></div>" + intro + bento_section + chapters_html
 
     ledger = (
         f'<details class="ledger" id="all-files">'
@@ -871,6 +1036,13 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         '<div class="drawer-body"></div></aside></div>'
     )
 
+    lightbox = (
+        '<div class="shot-lightbox" id="shot-lightbox" hidden role="dialog" aria-label="截图预览">'
+        '<img src="data:," alt="">'
+        '<div class="shot-lightbox-bar"><span class="shot-lightbox-caption"></span>'
+        '<button type="button" class="shot-lightbox-close">关闭 (Esc)</button></div></div>'
+    )
+
     data["reading"] = {"treeFiles": list(paths.values()), "targets": targets}
     footer_label = str(data.get("branch") or repo_label)
     return (
@@ -884,6 +1056,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         + sidebar
         + "</div>"
         + drawer
+        + lightbox
         + "".join(templates)
     )
 

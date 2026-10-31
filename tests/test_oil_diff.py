@@ -156,6 +156,9 @@ class OilDiffWorkflowTests(unittest.TestCase):
         html_text = html_path.read_text(encoding="utf-8")
         self.assertIn('class="bg-grid"', html_text)
         self.assertIn('class="diff-drawer-root"', html_text)
+        self.assertIn('class="blast-funnel"', html_text)
+        self.assertIn('id="bento-deck"', html_text)
+        self.assertIn('id="shot-lightbox"', html_text)
         self.assertIn('id="related-1"', html_text)
         self.assertNotIn('<details class="diff-card"', html_text)
 
@@ -272,7 +275,7 @@ class OilDiffWorkflowTests(unittest.TestCase):
             ],
             cwd=self.repo,
         )
-        for dtype in ("routing", "comparison", "scenarios", "flow", "alignment", "diagnostics"):
+        for dtype in ("routing", "comparison", "scenarios", "flow", "alignment", "diagnostics", "screenshots", "schema"):
             spec = {
                 "title": "这次修改了哪 1 件事",
                 "summary": "调整了主流程说明与文件边界。",
@@ -287,6 +290,9 @@ class OilDiffWorkflowTests(unittest.TestCase):
                         "example": "比如只改一处说明时还要翻完整篇文档。",
                         "diagram": {
                             "type": dtype,
+                            "mode": "slider",
+                            "before": {"src": "assets/shots/before.png", "title": "修改前", "tag": "× 旧界面"},
+                            "after": {"src": "assets/shots/after.png", "title": "修改后", "tag": "✓ 新界面"},
                             "branches": [{"title": "分支 A", "file": "SKILL.md", "copy": "说明"}],
                             "scenarios": [{"title": "场景 A", "before": "以前", "after": "现在"}],
                             "rows": [{"title": "检查 1", "file": "SKILL.md", "detail": "锚点", "verdict": "通过", "pass": True}],
