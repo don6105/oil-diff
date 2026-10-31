@@ -219,17 +219,17 @@ def full_diff_html(f: dict[str, object], chunks: list[dict[str, object]]) -> str
 
 def default_diagram_html(item: dict[str, object]) -> str:
     points = item.get("points", [])
+    letters = "ABCDEF"
     cards = ""
-    for idx, pt in enumerate(points, 1):
-        pt_title = pt[0] if isinstance(pt, list) else pt.get("title", "")
-        pt_copy = pt[1] if isinstance(pt, list) else pt.get("copy", "")
+    for idx, pt in enumerate(points):
+        letter = letters[idx % len(letters)]
+        pt_title = pt[0] if isinstance(pt, list) else pt.get("title", f"要点 {letter}")
         cards += (
-            f'<div class="scenario">'
-            f'<h4><span>{idx:02d}</span>{e(pt_title)}</h4>'
-            f'<p class="scenario-new">{e(pt_copy)}</p>'
-            f"</div>"
+            f'<section class="vis-card">'
+            f'<div class="vis-card-head"><span>{letter}</span>{e(pt_title)}</div>'
+            f'{specimen_pair_html({"title": pt_title}, idx)}</section>'
         )
-    return f'<div class="visual-stage"><div class="scenario-grid">{cards}</div></div>'
+    return f'<div class="visual-stage"><div class="vis-grid-3">{cards}</div></div>'
 
 
 def normalize_diagram_html(diag_html: str) -> str:
@@ -297,6 +297,74 @@ def mini_shot_window(kind: str = "", side: int = 40, label: str = "项目") -> s
     )
 
 
+def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
+    kind = str(sc.get("kind", "")).lower()
+    title = str(sc.get("title", ""))
+    bad_tag = str(sc.get("badTag") or sc.get("beforeTag") or "")
+    good_tag = str(sc.get("goodTag") or sc.get("afterTag") or "")
+
+    if kind == "chart" or any(k in title for k in ("图", "柱", "轴")):
+        bad_svg = (
+            '<svg class="ui-Chart-svg" viewBox="0 0 160 62" aria-hidden="true">'
+            '<path d="M18 6v46h132" fill="none" stroke="#3a3228" stroke-width="2"/>'
+            '<path d="M14 14h4M14 28h4M14 42h4M46 52v4M84 52v4M122 52v4" stroke="#3a3228" stroke-width="1.6"/>'
+            '<rect x="32" y="24" width="20" height="27" fill="#c99b84"/>'
+            '<rect x="70" y="14" width="20" height="37" fill="#b87b61"/>'
+            '<rect x="108" y="30" width="20" height="21" fill="#c99b84"/></svg>'
+        )
+        good_svg = (
+            '<svg class="ui-Chart-svg" viewBox="0 0 160 62" aria-hidden="true">'
+            '<path d="M14 16h134M14 32h134M14 48h134" stroke="#dfd7c6" stroke-dasharray="3 3" stroke-width="1"/>'
+            '<rect x="30" y="22" width="22" height="26" rx="4" fill="#7fa682"/>'
+            '<rect x="69" y="11" width="22" height="37" rx="4" fill="#4f825b"/>'
+            '<rect x="108" y="27" width="22" height="21" rx="4" fill="#7fa682"/></svg>'
+        )
+        b_lbl = bad_tag or "× 粗黑实线轴 + 刻度刺"
+        g_lbl = good_tag or "✓ 隐藏实线轴 + 圆角柱"
+        return (
+            f'<div class="vis-pair-stack">'
+            f'<div class="vis-box is-bad">{bad_svg}<span class="vis-tag">{e(b_lbl)}</span></div>'
+            f'<div class="vis-box is-good">{good_svg}<span class="vis-tag">{e(g_lbl)}</span></div></div>'
+        )
+
+    if kind in ("select", "snapshot") or any(k in title for k in ("箭头", "下拉", "选择")):
+        bad_ui = (
+            '<div class="ui-select-demo bad-select">'
+            '<span class="sel-text">全部门店库存预警状态</span>'
+            '<span class="sel-arrows">▾⌄</span></div>'
+        )
+        good_ui = (
+            '<div class="ui-select-demo good-select">'
+            '<span class="sel-text">全部门店库存预警…</span>'
+            '<span class="sel-arrows">⌄</span></div>'
+        )
+        b_lbl = bad_tag or "× 双箭头重叠 · 文字撞箭头"
+        g_lbl = good_tag or "✓ 单套箭头 · 最长文字留白"
+        return (
+            f'<div class="vis-pair-stack">'
+            f'<div class="vis-box is-bad">{bad_ui}<span class="vis-tag">{e(b_lbl)}</span></div>'
+            f'<div class="vis-box is-good">{good_ui}<span class="vis-tag">{e(g_lbl)}</span></div></div>'
+        )
+
+    bad_ui = (
+        '<div class="ui-focus-demo">'
+        '<div class="ui-focus-row"><span>#01 华东门店</span><span>筛选已清空</span></div>'
+        '<div class="ui-focus-row"><span>#02 华南门店</span><span>焦点丢失</span></div></div>'
+    )
+    good_ui = (
+        '<div class="ui-focus-demo">'
+        '<div class="ui-focus-row"><span>#01 华东门店</span><span>保留原筛选</span></div>'
+        '<div class="ui-focus-row is-focused"><span>#02 华南门店</span><span>↩ 焦点归还</span></div></div>'
+    )
+    b_lbl = bad_tag or "× 关抽屉丢筛选与焦点"
+    g_lbl = good_tag or "✓ 保留筛选 · 焦点回原行"
+    return (
+        f'<div class="vis-pair-stack">'
+        f'<div class="vis-box is-bad">{bad_ui}<span class="vis-tag">{e(b_lbl)}</span></div>'
+        f'<div class="vis-box is-good">{good_ui}<span class="vis-tag">{e(g_lbl)}</span></div></div>'
+    )
+
+
 def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) -> str:
     dtype = str(diag.get("type", "scenarios"))
     if dtype == "routing":
@@ -305,28 +373,21 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             diag.get("beforeTitle")
             or diag.get("beforeState")
             or before_obj.get("state")
-            or "修改前 · 一份文件混写"
+            or "修改前 · 单一主线"
         )
         before_file = str(diag.get("beforeFile") or before_obj.get("file") or "SKILL.md")
-        before_copy = str(
-            diag.get("beforeCopy")
-            or before_obj.get("desc")
-            or before_obj.get("copy")
-            or "多类页面或模块共用同一套说明"
-        )
-        before_note = str(diag.get("beforeNote") or before_obj.get("note") or "↳ 容易误触不相关的规则")
+        before_note = str(diag.get("beforeNote") or before_obj.get("note") or "× 改后台也混跑海报流程")
         legacy_html = (
             f'<section class="legacy-domain">{vis_state(before_state)}'
             f'<div class="legacy-file">{artifact_file(before_file)}'
             f'<div class="mixed-pages">{domain_wire("marketing")}{domain_wire("workspace")}</div>'
-            f"<span>{e(before_copy)}</span></div>"
+            f"<span>所有页面共用同一套流程</span></div>"
             f'<div class="wrong-rule">{e(before_note)}</div></section>'
         )
         entry_obj = diag.get("entry") if isinstance(diag.get("entry"), dict) else {}
-        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 总入口按领域分流")
+        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 先定范围，再按页面分流")
         entry_file = str(diag.get("entryFile") or entry_obj.get("file") or "SKILL.md")
-        entry_desc = str(diag.get("entryCopy") or entry_obj.get("desc") or entry_obj.get("copy") or "")
-        entry_desc_html = f"<span>{e(entry_desc)}</span>" if entry_desc else ""
+        entry_tag = str(diag.get("entryTag") or "① 定范围 → ② 选页面")
         branches = list(diag.get("branches", []))
         wire_cycle = ["marketing", "workspace", "content", "play"]
         nodes_html: list[str] = []
@@ -336,13 +397,12 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             main_file = artifact_file(str(br["file"])) if br.get("file") else ""
             sub_files = "".join(artifact_file(str(sf)) for sf in br.get("subFiles", []))
             sub_wrap = f'<div class="workspace-children">{sub_files}</div>' if sub_files else ""
-            br_copy = br.get("copy") or br.get("desc") or ""
-            copy_span = f"<span>{e(br_copy)}</span>" if br_copy else ""
-            deleted = f'<del>{e(br["deleted"])}</del>' if br.get("deleted") else ""
+            short_tag = str(br.get("tag") or "")
+            tag_span = f"<span>{e(short_tag)}</span>" if short_tag else ""
             nodes_html.append(
                 f'<div class="domain-node">{domain_wire(w_type)}'
                 f'<strong>{e(br.get("title", ""))}{badge}</strong>'
-                f"{main_file}{copy_span}{sub_wrap}{deleted}</div>"
+                f"{main_file}{tag_span}{sub_wrap}</div>"
             )
         mid = (len(nodes_html) + 1) // 2
         col1 = "".join(f'<div class="route-branch">{n}</div>' for n in nodes_html[:mid])
@@ -350,46 +410,36 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         cols_html = f'<div class="route-column">{col1}</div>' + (f'<div class="route-column">{col2}</div>' if col2 else "")
         routes_html = (
             f'<section class="new-domains">{vis_state(after_state, True)}'
-            f'<div class="route-entry">{artifact_file(entry_file)}{entry_desc_html}</div>'
+            f'<div class="route-entry">{artifact_file(entry_file)}<span>· {e(entry_tag)}</span></div>'
             f'<div class="route-columns">{cols_html}</div></section>'
         )
         return f'<div class="visual-stage"><div class="domain-map">{legacy_html}{vis_arrow("domain-arrow")}{routes_html}</div></div>'
 
     if dtype == "comparison":
-        before_state = str(diag.get("beforeTitle") or diag.get("beforeState") or "修改前 · 容易做成千篇一律的模板")
-        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 结构干净、组件与数字对齐")
-        problems = list(
-            diag.get("beforeItems")
-            or diag.get("beforeCallouts")
-            or diag.get("problems")
-            or ["配色杂乱", "多余小图", "边框混用"]
-        )
-        standards = list(
-            diag.get("afterItems")
-            or diag.get("afterCallouts")
-            or diag.get("standards")
-            or ["成熟组件", "同行等高", "边界统一"]
-        )
-        metrics = "".join('<div class="fake-metric"><span>指标</span><strong>128</strong></div>' for _ in range(4))
-        badrows = "".join('<div class="fake-row"><span>#a8f921</span><span>模块 A</span><span>128</span></div>' for _ in range(4))
-        legend = "".join(
-            f'<span><b>{i}</b>{e(str(text).lstrip("×✓ "))}</span>'
-            for i, text in enumerate(problems[:5], 1)
-        )
+        before_state = str(diag.get("beforeTitle") or diag.get("beforeState") or "修改前 · 控件高低不齐、硬塞装饰图")
+        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 同行等高对齐、边界干净统一")
         old_sec = (
             f"<section>{vis_state(before_state)}"
             '<div class="admin-window fake-admin"><aside class="fake-sidebar">'
-            '<div class="fake-brand"><b>A</b><span>TEMPLATE</span><mark class="issue-pin pin-1">1</mark></div>'
+            '<div class="fake-brand"><b>☕</b><span>门店后台</span></div>'
             "<i></i><i></i><i></i></aside>"
-            f'<div class="fake-body"><div class="fake-metrics">{metrics}<mark class="issue-pin pin-2">2</mark></div>'
-            '<select disabled aria-label="旧筛选框"><option>全部状态</option></select>'
-            f'<div class="fake-table">{badrows}<mark class="issue-pin pin-3">3</mark></div></div></div>'
-            f'<div class="issue-legend">{legend}</div></section>'
+            '<div class="fake-body">'
+            '<div class="ui-toolbar-demo" style="margin-bottom:8px">'
+            '<span class="ui-ctrl" style="height:20px">搜索</span>'
+            '<span class="ui-ctrl" style="height:28px">全部状态 ▾⌄</span>'
+            '<span class="ui-ctrl" style="height:18px">导出</span></div>'
+            '<div class="fake-metrics" style="grid-template-columns:1fr 1fr;gap:6px">'
+            '<div class="fake-metric" style="border:1.5px solid #6e5a4f;background:#efe2d5"><span>硬塞趋势</span><strong>〰〰</strong></div>'
+            '<div class="fake-metric" style="border:1.5px solid #6e5a4f;background:#efe2d5"><span>凑数卡片</span><strong>〰〰</strong></div></div>'
+            '<div class="fake-table" style="margin-top:8px">'
+            '<div class="fake-row"><span>华东门店</span><span>缺货</span><span>128</span></div>'
+            '<div class="fake-row"><span>华南门店</span><span>正常</span><span>64</span></div></div></div></div>'
+            '<div class="issue-legend"><span>× 同行控件高低不齐</span><span>× 色块与粗黑框混用</span><span>× 硬塞无意义微图表</span></div></section>'
         )
         rows_data = diag.get("tableRows") or [
-            ("核心工作台", "运行中", "12,480.00"),
-            ("门店补货单", "待审核", "8,320.00"),
-            ("权限与设置", "已对齐", "960.00"),
+            ("华东旗舰店", "待补货", "1,280"),
+            ("静安烘焙店", "配送中", "860"),
+            ("徐汇中心店", "已齐备", "640"),
         ]
         realrows = "".join(
             f'<div class="real-row"><strong>{e(r[0])}</strong>'
@@ -397,28 +447,29 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             f"<code>{e(r[2])}</code></div>"
             for i, r in enumerate(rows_data[:3])
         )
-        std_spans = "".join(f"<span>{e(s)}</span>" for s in standards)
-        foot_note = f'<div class="deleted-standard">{e(diag["footerNote"])}</div>' if diag.get("footerNote") else ""
         new_sec = (
             f"<section>{vis_state(after_state, True)}"
             '<div class="admin-window real-admin"><aside class="real-sidebar"><span>◈</span><i></i><i></i><i></i></aside>'
-            '<div class="real-body"><header><strong>工作区视图</strong><span class="new-project">＋ 新建</span></header>'
-            '<div class="real-toolbar"><span>⌕ 搜索记录…</span><span>状态筛选 ⌄</span></div>'
-            '<div class="real-table"><div class="real-table-head"><span>对象</span><span>状态</span><span>数值</span></div>'
+            '<div class="real-body"><header><strong>门店补货工作台</strong>'
+            '<div class="ui-seg"><span class="is-active">待补货</span><span>全部</span></div></header>'
+            '<div class="ui-toolbar-demo is-equal" style="margin:9px 0">'
+            '<span class="ui-ctrl" style="height:24px;flex:1">⌕ 搜索门店…</span>'
+            '<span class="ui-ctrl" style="height:24px">状态 ⌄</span>'
+            '<span class="ui-ctrl" style="height:24px;background:#edf3e6;color:#2f5c3e;border-color:#c9dac2">＋ 补货单</span></div>'
+            '<div class="real-table"><div class="real-table-head"><span>门店</span><span>状态</span><span>库存数</span></div>'
             f"{realrows}</div></div></div>"
-            f'<div class="workspace-standards">{std_spans}</div>{foot_note}</section>'
+            '<div class="workspace-standards"><span>✓ 同行控件等高对齐</span><span>✓ 分段滑块底槽</span><span>✓ 同层边界统一</span></div></section>'
         )
         return f'<div class="visual-stage"><div class="workspace-comparison">{old_sec}{new_sec}</div></div>'
 
     if dtype == "flow":
-        before_state = str(diag.get("beforeTitle") or diag.get("oldState") or "修改前 · 串行排队逐项检查")
-        after_state = str(diag.get("afterTitle") or diag.get("newState") or "修改后 · 合并重复环节并行的流程")
+        before_state = str(diag.get("beforeTitle") or diag.get("oldState") or "修改前 · 8 分仍强制派第 2 轮子 Agent")
+        after_state = str(diag.get("afterTitle") or diag.get("newState") or "修改后 · 按首轮得分精准收尾 + 同比例拼图")
         thumbs = [
             '<div class="candidate-thumbs"><i></i><i></i><i></i></div>',
-            '<div class="sketch-thumb"><i></i><i></i><i></i><i></i></div>',
+            '<div class="score-preview"><b>8.0</b><span>/ 10</span></div>',
             '<div class="comparison-thumbs"><i></i><span>⇄</span><i></i></div>',
-            '<div class="score-preview"><b>8.5</b><span>/ 10</span></div>',
-            '<div class="trial-preview"><span>检查</span></div>',
+            '<div class="trial-preview"><span>误报</span></div>',
         ]
         steps = list(diag.get("beforeSteps") or diag.get("oldSteps") or [])
         old_nodes = ""
@@ -429,11 +480,9 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
                 if isinstance(st, dict)
                 else any(k in label for k in ("强制", "误报", "重复", "第 2 轮", "×"))
             )
-            note = str(st.get("note", "")) if isinstance(st, dict) else ("已精简" if removed else "")
             thumb = thumbs[i % len(thumbs)]
             rem_cls = " is-removed" if removed else ""
-            note_html = f"<small>{e(note)}</small>" if note else ""
-            old_nodes += f'<div class="serial-node{rem_cls}">{thumb}<span>{e(label)}</span>{note_html}</div>'
+            old_nodes += f'<div class="serial-node{rem_cls}">{thumb}<span>{e(label)}</span></div>'
             if i < len(steps) - 1:
                 old_nodes += vis_arrow("serial-arrow")
         fork = (
@@ -446,33 +495,33 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             '<path d="M1 34h12v82H1m12-41h13m-4-4 4 4-4 4" fill="none" '
             'stroke="currentColor" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>'
         )
-        start_node = diag.get("startNode") or {"title": "首轮生成与检查", "copy": "直接按领域规范实现"}
+        start_node = diag.get("startNode") or {"title": "shoot.mjs 截图", "tag": "同比例拼图"}
         tracks = list(
             diag.get("parallelTracks")
             or diag.get("tracks")
             or [
-                {"symbol": "◉", "title": "工作区专项评审", "copy": "核对 11 项结果与参考图对齐"},
-                {"symbol": "↗", "title": "shoot.mjs 截图拼图", "copy": "同比例缩放裁切，免钥匙串弹窗"},
+                {"symbol": "◉", "title": "后台 11 项评审", "tag": "不乱拆正常卡片"},
+                {"symbol": "↗", "title": "控件边界核对", "tag": "单箭头与焦点归还"},
             ]
         )
-        end_node = diag.get("endNode") or {"title": "达标即停交付", "copy": "首轮 8 分无硬伤微调即停"}
+        end_node = diag.get("endNode") or {"title": "按分收尾", "tag": "≥8 分微调即停"}
         t_html = ""
         for idx, tr in enumerate(tracks[:2]):
             sym = tr.get("symbol") or ("◉" if idx == 0 else "↗")
-            tr_copy = tr.get("copy") or tr.get("sub") or ""
+            tr_tag = tr.get("tag") or tr.get("copy") or tr.get("sub") or ""
             t_html += (
                 f'<div class="process-node track-node"><span class="track-symbol">{e(sym)}</span>'
-                f'<div><strong>{e(tr.get("title", ""))}</strong><span>{e(tr_copy)}</span></div></div>'
+                f'<div><strong>{e(tr.get("title", ""))}</strong><span>{e(tr_tag)}</span></div></div>'
             )
-        start_copy = start_node.get("copy") or start_node.get("sub") or ""
-        end_copy = end_node.get("copy") or end_node.get("sub") or ""
+        start_tag = start_node.get("tag") or start_node.get("copy") or start_node.get("sub") or ""
+        end_tag = end_node.get("tag") or end_node.get("copy") or end_node.get("sub") or ""
         now_html = (
             f'<div class="parallel-flow">'
             f'<div class="process-node maker-node"><div class="page-preview"><i></i><i></i><i></i></div>'
-            f'<strong>{e(start_node.get("title", ""))}</strong><span>{e(start_copy)}</span></div>'
+            f'<strong>{e(start_node.get("title", ""))}</strong><span>{e(start_tag)}</span></div>'
             f"{fork}<div class=\"parallel-tracks\">{t_html}</div>{merge}"
             f'<div class="process-node result-node"><div class="review-list"><i></i><i></i><i></i></div>'
-            f'<strong>{e(end_node.get("title", ""))}</strong><span>{e(end_copy)}</span></div></div>'
+            f'<strong>{e(end_node.get("title", ""))}</strong><span>{e(end_tag)}</span></div></div>'
         )
         return (
             f'<div class="visual-stage">{vis_state(before_state)}'
@@ -489,17 +538,16 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             f'<div class="ruler short-ruler">120 px</div>{mini_shot_window("too-small", 20)}</div>'
             f'<div><span class="shot-caption">参考图</span>'
             f'<div class="ruler">240 px</div>{mini_shot_window("", 40)}</div></div>'
-            '<div class="mismatch-ruler"><span>120 px</span><b>≠</b><span>240 px</span>'
-            "<small>共有侧栏与文字比例不一致</small></div></section>"
+            '<div class="mismatch-ruler"><span>120 px</span><b>≠</b><span>240 px</span></div></section>'
         )
         new_col = (
             f'<section class="alignment-after">{vis_state(after_state, True)}'
             '<div class="tool-options"><code>matchWidth: 240</code><code>crop: {x, y, w, h}</code></div>'
-            f'<div class="shot-pair aligned-pair"><div><span class="shot-caption">当前画面 <em>放大 2.0×</em></span>'
+            f'<div class="shot-pair aligned-pair"><div><span class="shot-caption">当前画面 <em>2.0×</em></span>'
             f'<div class="ruler">240 px</div>{mini_shot_window("has-crop", 40)}</div>'
             f'<div><span class="shot-caption">参考图</span>'
             f'<div class="ruler">240 px</div>{mini_shot_window("has-crop", 40)}</div></div>'
-            '<div class="stitched-caption">同坐标裁切 · 1:1 并排对比</div>'
+            '<div class="stitched-caption">1:1 并排裁切</div>'
             f'<div class="stitched-result">{mini_shot_window("crop-output", 40)}{mini_shot_window("crop-output", 40)}</div></section>'
         )
         return f'<div class="visual-stage"><div class="alignment-grid">{old_col}{new_col}</div></div>'
@@ -509,71 +557,37 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         rows_html = ""
         for idx, row in enumerate(diag.get("rows", [])):
             passed = bool(row.get("pass", idx > 0))
-            v_cls = "verdict-pass" if passed else "verdict-fail"
-            badge = str(row.get("badge") or ("✓ PASS" if passed else "× FAIL"))
-            raw_code = str(row.get("code", ""))
-            title = str(row.get("title") or raw_code or f"检查项 {idx + 1}")
-            verdict = str(row.get("verdict", "")).lstrip("×✓ ")
-            sample_file = str(row.get("file") or (raw_code.split()[0] if raw_code else "SKILL.md"))
-            detail = str(row.get("detail") or row.get("input") or row.get("desc") or "")
-            if idx % 3 == 0:
-                box = f'<div class="reference-editor">{artifact_file(sample_file)}<code class="invalid-reference">↳ {e(detail)}</code></div>'
-            elif idx % 3 == 1:
-                box = (
-                    f'<div class="route-check">{artifact_file(sample_file)}{vis_arrow()}'
-                    '<span class="four-entries"><i></i><i></i><i></i><i></i><span>领域入口</span></span>'
-                    f'{vis_arrow()}<span class="rule-files">{e(detail)}</span></div>'
-                )
-            else:
-                box = f'<div class="heading-check"><code>{e(sample_file)}</code><span>核对规则：<code>{e(detail)}</code></span></div>'
+            b_cls = "is-pass" if passed else "is-fail"
+            left_node = str(row.get("left") or row.get("file") or "direction-persuasion.md")
+            edge_lbl = str(row.get("edge") or ("误引" if not passed else "核对"))
+            right_node = str(row.get("right") or row.get("target") or "workspace-data.md")
+            verdict = str(row.get("verdict") or ("✓ 通过" if passed else "× 拦截"))
             rows_html += (
-                f'<div class="diagnostic-row"><div class="diagnostic-input"><h4>{e(title)}</h4>{box}</div>'
-                f'{vis_arrow()}<div class="test-verdict {v_cls}"><span>{e(badge)}</span>'
-                f"<strong>{e(verdict)}</strong></div></div>"
+                f'<div class="pipe-row">'
+                f'<span class="pipe-node">{artifact_file(left_node)}</span>'
+                f'<span class="pipe-edge">{e(edge_lbl)}</span>'
+                f'<span class="pipe-node"><code>{e(right_node)}</code></span>'
+                f"{vis_arrow()}"
+                f'<span class="pipe-badge {b_cls}">{e(verdict)}</span></div>'
             )
         return (
             f'<div class="visual-stage"><div class="test-file-label">{artifact_file(test_file)}</div>'
-            f'<div class="diagnostic-board">{rows_html}</div></div>'
+            f'<div class="pipe-board">{rows_html}</div></div>'
         )
 
-    # Default: scenarios with miniature visual specimens
-    frames = ""
-    for i, (t_lbl, s_lbl) in enumerate([("0 ms", "收起"), ("120 ms", "过渡中"), ("240 ms", "完成 ✓")]):
-        frames += (
-            f'<div class="menu-frame"><div class="menu-screen"><span class="menu-trigger">选项 ⌄</span>'
-            f'<div class="menu-popup phase-{i}"><i></i><i></i><i></i></div></div>'
-            f"<code>{t_lbl}</code><span>{s_lbl}</span></div>"
-        )
-        if i < 2:
-            frames += vis_arrow("frame-arrow")
-    shots = "".join(
-        f'<div class="snapshot-tile {"changed-tile" if i == 1 else "reused-tile"}"><i></i><i></i>'
-        f'<span>{"重点核对" if i == 1 else "✓ 保持"}</span></div>'
-        for i in range(4)
-    )
-    runs = (
-        '<div class="run-history"><div><span>修改前</span>'
-        '<code class="old-run">× 轴线繁杂</code><code class="old-run">× 双箭头重叠</code></div>'
-        '<div><span>修改后</span><code class="new-run">✓ 圆角去轴线</code>'
-        '<span class="run-done">✓ 单箭头留白</span></div></div>'
-    )
-    specimens = [runs, f'<div class="snapshot-grid">{shots}</div>', f'<div class="menu-filmstrip">{frames}</div>']
+    # Default: clean visual specimen cards (ZERO prose paragraphs inside cards)
     letters = "ABCDEF"
     cards = ""
     scenario_list = list(diag.get("scenarios") or diag.get("cards") or [])
     for idx, sc in enumerate(scenario_list):
         letter = letters[idx % len(letters)]
-        title = str(sc.get("title", f"场景 {letter}"))
-        spec_html = specimens[idx % len(specimens)]
-        before_txt = str(sc.get("before") or sc.get("old") or "")
-        after_txt = str(sc.get("after") or sc.get("new") or "")
+        title = str(sc.get("title", f"图示 {letter}"))
         cards += (
-            f'<section class="scenario"><h4><span>{letter}</span>{e(title)}</h4>'
-            f'<p class="scenario-old">{e(before_txt)}</p>'
-            f"{spec_html}"
-            f'<p class="scenario-new">{e(after_txt)}</p></section>'
+            f'<section class="vis-card">'
+            f'<div class="vis-card-head"><span>{letter}</span>{e(title)}</div>'
+            f"{specimen_pair_html(sc, idx)}</section>"
         )
-    return f'<div class="visual-stage"><div class="scenario-grid">{cards}</div></div>'
+    return f'<div class="visual-stage"><div class="vis-grid-3">{cards}</div></div>'
 
 
 def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:

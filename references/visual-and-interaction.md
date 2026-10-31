@@ -19,17 +19,24 @@
    - 章节签（`§ 01`）、业务模块胶囊（`.module-badge`）、书页序号框（`.nav-number`）与文件树高亮统一使用暖琥珀金体系（`#8a6116` / `#f6ebd2`），不引入刺眼的彩虹多色编号；
    - 柔和砖红（`#9e3b24` / `#fbf1ee`）与松石绿（`#216343` / `#eef6f1`）仅用于表达「修改前 / 删除（`−M`）」与「修改后 / 新增（`+N`）」。
 
-## 二、 6 类原生 HTML/CSS 可视化舞台模式（推荐直接写结构化 `diagram` JSON）
+## 二、 配图是配图，文字是文字：6 类可视化舞台模式
 
-每章必须包含一个 `.visual-stage` 可视化对比舞台。**严禁使用 `1100×680` 大字号粗体 SVG 画板**。
+每章必须包含一个 `.visual-stage` 可视化对比舞台。必须遵守两条铁律：
 
-为了避免手写复杂 HTML 嵌套导致 Flex/Grid 挤压变形，**优先在 `.oil-diff/assets/report-spec.json` 的每个章节项中使用结构化 `"diagram"` 字段**，由 `scripts/render_report.py` 确定性生成对应的 HTML/CSS：
+1. **配图里严禁塞段落文字（No Prose in Diagrams）**：
+   - 解释性的句子统一写在配图上方的 `problem` / `example` 和下方的 `points` 里。
+   - `<figure class="diagram">` 内部**禁止出现任何 `<p>` 段落或 `以前：…… 现在：……` 的长句说明**（`scripts/lint_report.py` 会直接报错拦截）；配图内的文字只能是 **2～10 字的极简短标签**（如 `× 粗黑实线轴`、`✓ 圆角无轴柱`、`× 双箭头重叠`）。
+2. **图文 100% 对应，严禁拿无关假图凑数**：
+   - 配图画的控件、图表或管道必须就是当前章节改的那件事（例如讲柱状图就画粗黑轴 vs 圆角无轴柱状图，讲下拉框就画双箭头挤压 vs 单箭头留白，不要放与章节无关的通用装饰图）。
 
-- **`type: "routing"`（路由分流与文件架构图）**：传入 `beforeTitle`、`beforeCopy`、`entryTitle`、`entryCopy` 与 `branches: [{"title": "...", "copy": "..."}]`。
-- **`type: "comparison"`（界面与规范正反对比）**：传入 `beforeTitle`、`beforeItems: ["...", "..."]`、`afterTitle` 与 `afterItems: ["...", "..."]`。
-- **`type: "scenarios"`（多场景对照矩阵）**：传入 `scenarios: [{"title": "...", "before": "...", "after": "..."}]`。
-- **`type: "flow"`（流程精简与并流图）**：传入 `beforeSteps: [{"label": "...", "removed": true}]` 与 `afterSummary: "..."`。
-- **`type: "diagnostics"`（自动化检查防线卡）**：传入 `rows: [{"input": "...", "verdict": "✓ PASS ...", "pass": true}]`。
+优先在 `.oil-diff/assets/report-spec.json` 的每个章节项中使用结构化 `"diagram"` 字段，由 `scripts/render_report.py` 确定性生成：
+
+- **`type: "routing"`（路由分流与文件架构图）**：传入 `beforeTitle`、`beforeFile`、`beforeNote`、`afterTitle`、`entryFile`、`entryTag` 与 `branches: [{"wire": "marketing|workspace|content|play", "title": "4～6字短名", "file": "文件名"}]`（卡片内只放线框缩略图 + 短名 + 文件名，不写长句）。
+- **`type: "comparison"`（微缩界面正反对比）**：传入 `beforeTitle`、`afterTitle` 与可选的 `tableRows`。左侧展示高低不齐控件与混用黑框的反面窗口，右侧展示同行等高工具栏、分段滑块与对齐表格的正面窗口。
+- **`type: "scenarios"`（三列纯视觉实物对照卡）**：传入 `cards: [{"kind": "chart|select|focus", "title": "4～6字短标题", "badTag": "× 6～10字痛点标签", "goodTag": "✓ 6～10字改后标签"}]`。每张卡只渲染上/下两个真实微缩控件盒与短标签，**零段落文字**。
+- **`type: "flow"`（流程精简与并流图）**：传入 `beforeSteps: ["1. 短标签", "2. × 被删环节"]`、`startNode`、`tracks` 与 `endNode`（每个节点 `tag` 控制在 10 字以内）。
+- **`type: "alignment"`（标尺对齐与取景工作台）**：展示 `120 px ≠ 240 px` 比例失调窗口与 `matchWidth: 240` 同比例缩放裁切窗口。
+- **`type: "diagnostics"`（三段式检查管道）**：传入 `testFile` 与 `rows: [{"left": "源模块", "edge": "动作", "right": "目标规则", "verdict": "✓ 8 项全绿", "pass": true}]`。
 
 如果需要编写更精细的自定义 `diagramHtml`，根据章节业务类型选用以下 6 种标准舞台模式（对应 CSS 类已内置于 [assets/report.css](../assets/report.css)）：
 

@@ -37,6 +37,12 @@ VISUAL_PRIMITIVE_TOKENS = (
     "run-history",
     "track-junction",
     "artifact-file",
+    "ui-Chart-svg",
+    "ui-select-demo",
+    "ui-focus-demo",
+    "ui-toolbar-demo",
+    "pipe-board",
+    "vis-card",
 )
 
 FORBIDDEN_NOISE_PHRASES = (
@@ -179,6 +185,14 @@ def lint_report(repo: Path, report_dir: Path) -> tuple[list[str], list[str]]:
 
     if '<details class="diff-card"' in html:
         errors.append("index.html uses inline <details class=\"diff-card\"> instead of slide-over drawer triggers.")
+
+    for fig_idx, fig_match in enumerate(
+        re.finditer(r'<figure class="diagram"[^>]*>(.*?)</figure>', html, re.DOTALL), 1
+    ):
+        if re.search(r"<p(?:\s|>)", fig_match.group(1)):
+            errors.append(
+                f"Diagram {fig_idx} contains <p> prose inside <figure class=\"diagram\">; keep prose in problem/example/points and use only visual elements + short tags inside diagrams."
+            )
 
     # 4. Single-file point must not render .file-explanation on the card trigger
     for idx, item in enumerate(items, 1):
