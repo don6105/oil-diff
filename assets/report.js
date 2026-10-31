@@ -340,11 +340,12 @@ if (lightbox) {
   const lbImg = lightbox.querySelector('img');
   const lbCap = lightbox.querySelector('.shot-lightbox-caption');
   const closeLb = () => {lightbox.hidden = true;};
-  for (const trig of document.querySelectorAll('[data-lightbox-src]')) {
+  for (const trig of document.querySelectorAll('[data-lightbox-src], [data-shot-zoom]')) {
     trig.addEventListener('click', () => {
-      lbImg.src = trig.dataset.lightboxSrc;
-      lbImg.alt = trig.dataset.lightboxCaption || '';
-      if (lbCap) lbCap.textContent = trig.dataset.lightboxCaption || '';
+      lbImg.src = trig.dataset.lightboxSrc || trig.dataset.shotZoom;
+      const cap = trig.dataset.lightboxCaption || trig.dataset.shotCaption || '';
+      lbImg.alt = cap;
+      if (lbCap) lbCap.textContent = cap;
       lightbox.hidden = false;
     });
   }

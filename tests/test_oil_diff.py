@@ -156,10 +156,11 @@ class OilDiffWorkflowTests(unittest.TestCase):
         html_text = html_path.read_text(encoding="utf-8")
         self.assertIn('class="bg-grid"', html_text)
         self.assertIn('class="diff-drawer-root"', html_text)
-        self.assertIn('class="blast-funnel"', html_text)
+        self.assertIn('blast-funnel', html_text)
         self.assertIn('id="bento-deck"', html_text)
         self.assertIn('id="shot-lightbox"', html_text)
         self.assertIn('id="related-1"', html_text)
+        self.assertNotIn('id="all-files"', html_text)
         self.assertNotIn('<details class="diff-card"', html_text)
 
         lint_res = run_cmd(
