@@ -100,11 +100,14 @@ def comparison_html(before: list[dict[str, object]], after: list[dict[str, objec
             f'<div class="compare-heading"><strong>{title}</strong><span>{e(rev)}</span></div>'
         )
         if not rows:
-            empty_msg = (
-                ("原来没有这个文件。" if f.get("kind") == "A" else "此处原来没有这段内容。")
-                if index == 0
-                else "这段内容已删除。"
-            )
+            if f.get("binary"):
+                empty_msg = "二进制文件或静态资源，不展示文本行级对比。"
+            else:
+                empty_msg = (
+                    ("原来没有这个文件。" if f.get("kind") == "A" else "此处原来没有这段内容。")
+                    if index == 0
+                    else "这段内容已删除。"
+                )
             pair += f'<p class="empty-copy">{empty_msg}</p>'
         else:
             pair += '<pre class="source-lines">'
@@ -149,11 +152,17 @@ def select_rows(
         if "startLine" in spec and "endLine" in spec:
             start_l = int(spec["startLine"])
             end_l = int(spec["endLine"])
+            matched = 0
             for n in range(start_l, end_l + 1):
                 if n in rows:
                     row = rows[n]
                     text = str(row["text"])
                     result.append({**row, "selection": (0, len(text))})
+                    matched += 1
+            if matched == 0 and rows:
+                raise ValueError(
+                    f"Line range {start_l}..{end_l} not found in {f['id']} ({side}). Available lines: {sorted(rows.keys())}"
+                )
             continue
         n = int(spec["line"])
         if n not in rows:
@@ -161,7 +170,11 @@ def select_rows(
         row = rows[n]
         text = str(row["text"])
         start = text.index(str(spec["start"])) if spec.get("start") else 0
-        end = text.index(str(spec["end"]), start) if spec.get("end") else len(text)
+        if spec.get("end"):
+            end_tok = str(spec["end"])
+            end = text.index(end_tok, start) + len(end_tok)
+        else:
+            end = len(text)
         clipped = ("…" if start else "") + text[start:end] + ("…" if end < len(text) else "")
         result.append({**row, "text": clipped, "selection": (start, end)})
     return result
@@ -218,16 +231,19 @@ def full_diff_html(f: dict[str, object], chunks: list[dict[str, object]]) -> str
 
 
 def default_diagram_html(item: dict[str, object]) -> str:
-    points = item.get("points", [])
+    points = list(item.get("points", []))
     letters = "ABCDEF"
     cards = ""
+    if not points:
+        mod = str(item.get("module") or item.get("title") or "核心改动")
+        points = [{"title": mod}]
     for idx, pt in enumerate(points):
         letter = letters[idx % len(letters)]
         pt_title = pt[0] if isinstance(pt, list) else pt.get("title", f"要点 {letter}")
         cards += (
             f'<section class="vis-card">'
             f'<div class="vis-card-head"><span>{letter}</span>{e(pt_title)}</div>'
-            f'{specimen_pair_html({"title": pt_title}, idx)}</section>'
+            f'{specimen_pair_html({"title": pt_title, "before": "旧实现逻辑", "after": pt_title}, idx)}</section>'
         )
     return f'<div class="visual-stage"><div class="vis-grid-3">{cards}</div></div>'
 
@@ -623,13 +639,16 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         return f'<div class="visual-stage"><div class="alignment-grid">{old_col}{new_col}</div></div>'
 
     if dtype == "screenshots":
-        mode = str(diag.get("mode", "pair")).lower()
-        b_src = str(diag.get("beforeSrc") or "")
-        a_src = str(diag.get("afterSrc") or diag.get("src") or "")
-        b_title = str(diag.get("beforeTitle") or "修改前")
-        a_title = str(diag.get("afterTitle") or "修改后")
-        b_tag = str(diag.get("beforeTag") or "")
-        a_tag = str(diag.get("afterTag") or "")
+        b_obj = diag.get("before") if isinstance(diag.get("before"), dict) else {}
+        a_obj = diag.get("after") if isinstance(diag.get("after"), dict) else {}
+        b_src = str(diag.get("beforeSrc") or b_obj.get("src") or "")
+        a_src = str(diag.get("afterSrc") or diag.get("src") or a_obj.get("src") or "")
+        b_title = str(diag.get("beforeTitle") or b_obj.get("title") or "修改前")
+        a_title = str(diag.get("afterTitle") or a_obj.get("title") or "修改后")
+        b_tag = str(diag.get("beforeTag") or b_obj.get("tag") or "")
+        a_tag = str(diag.get("afterTag") or a_obj.get("tag") or "")
+        default_mode = "slider" if (b_src and a_src) else "pair"
+        mode = str(diag.get("mode", default_mode)).lower()
         if mode == "slider" and b_src and a_src:
             return (
                 f'<div class="visual-stage"><div class="shot-slider-wrap">'
@@ -652,14 +671,19 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
                 f"{shot_frame_html(b_src, b_title, b_tag, False)}"
                 f"{shot_frame_html(a_src, a_title, a_tag, True)}</div></div>"
             )
-        shots = list(diag.get("shots") or [])
+        if a_src and not diag.get("shots") and not diag.get("items"):
+            return (
+                f'<div class="visual-stage"><div class="shot-pair-grid">'
+                f"{shot_frame_html(a_src, a_title, a_tag, True)}</div></div>"
+            )
+        shots = list(diag.get("shots") or diag.get("items") or [])
         cols = "vis-grid-3" if len(shots) >= 3 else "shot-pair-grid"
         frames = "".join(
             shot_frame_html(
                 str(s.get("src", "")),
                 str(s.get("title", f"截图 {i + 1}")),
                 str(s.get("tag", "")),
-                bool(s.get("good", True)),
+                (str(s.get("state", "")).lower() != "bad") if "state" in s else bool(s.get("good", True)),
             )
             for i, s in enumerate(shots)
         )
@@ -668,14 +692,25 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
     if dtype == "schema":
         b_title = str(diag.get("beforeTitle") or "修改前 · 旧结构")
         a_title = str(diag.get("afterTitle") or "修改后 · 新结构")
-        b_rows = "".join(
-            f'<div class="schema-row is-del"><code>− {e(r)}</code></div>'
-            for r in diag.get("beforeRows", [])
-        )
-        a_rows = "".join(
-            f'<div class="schema-row is-add"><code>+ {e(r)}</code></div>'
-            for r in diag.get("afterRows", [])
-        )
+        raw_b = list(diag.get("beforeRows") or diag.get("beforeFields") or ["旧字段 / 旧签名"])
+        raw_a = list(diag.get("afterRows") or diag.get("afterFields") or ["新字段 / 新签名"])
+
+        def _fmt_schema_row(r: object, is_add: bool) -> str:
+            cls = "is-add" if is_add else "is-del"
+            prefix = "+" if is_add else "−"
+            if isinstance(r, dict):
+                k = str(r.get("key") or r.get("name") or "")
+                v = str(r.get("val") or r.get("type") or r.get("value") or "")
+                if r.get("add") is False and r.get("del") is False:
+                    cls = ""
+                    prefix = " "
+                label = f"{k}: {v}" if (k and v) else (k or v)
+            else:
+                label = str(r)
+            return f'<div class="schema-row {cls}"><code>{prefix} {e(label)}</code></div>'
+
+        b_rows = "".join(_fmt_schema_row(r, False) for r in raw_b)
+        a_rows = "".join(_fmt_schema_row(r, True) for r in raw_a)
         return (
             f'<div class="visual-stage"><div class="schema-diff">'
             f'<div class="schema-box is-bad"><div class="schema-head">{e(b_title)}</div><div class="schema-rows">{b_rows}</div></div>'
@@ -762,15 +797,14 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
                 "role": drawer_role or role or "",
             }
         )
-        first_occurrence = str(f["id"]) not in seen_files
         seen_files.add(str(f["id"]))
         chunks = f.get("chunks", [])
-        if (before is None or (len(chunks) == 1 and first_occurrence)) and chunks:
+        if before is None and after is None and chunks:
             before = changed_rows(chunks[0], "before")
             after = changed_rows(chunks[0], "after")
         before = before or []
         after = after or []
-        rem = remaining_chunks(f, before, after) if len(chunks) > 1 else []
+        rem = remaining_chunks(f, before, after) if chunks else []
         variant_html = f'<span class="file-variant">{e(variant)}</span>' if variant else ""
         content = comparison_html(before, after, f)
         if rem:
@@ -822,7 +856,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         f'<div class="header-controls">'
         f'<div class="report-meta"><span>{data["uniquePaths"]} 个文件 '
         f"<b>+{total_add}</b> <i>−{total_delete}</i></span>"
-        f'<span>🎯 {len(core_fids)} 核心 · 📎 {sync_count} 外围</span>'
+        f'<span>🎯 {len(core_paths)} 核心 · 📎 {sync_count} 外围</span>'
         f"<code>{e(range_chain)}</code></div></div>"
     )
 
@@ -886,8 +920,9 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
                 if fid not in item_file_ids:
                     raise ValueError(f"fileId '{fid}' in item {n}, point {j} is not listed in item.fileIds")
                 f = files[fid]
-                before_rows = select_rows(f, "before", d.get("before"))
-                after_rows = select_rows(f, "after", d.get("after"))
+                has_explicit_spec = "before" in d or "after" in d
+                before_rows = select_rows(f, "before", d.get("before", [] if has_explicit_spec else None))
+                after_rows = select_rows(f, "after", d.get("after", [] if has_explicit_spec else None))
                 raw_role = str(d.get("role", "")).strip() or pt_copy or None
                 points_html += diff_card(
                     n,
@@ -1047,7 +1082,14 @@ def render_html_document(data: dict[str, object], spec: dict[str, object]) -> st
     body_html = render_report_body(data, spec)
     css_text = (ASSETS_DIR / "report.css").read_text(encoding="utf-8")
     js_text = (ASSETS_DIR / "report.js").read_text(encoding="utf-8")
-    serialized_data = json.dumps(data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
+    client_data = {
+        "files": [
+            {k: f[k] for k in ("id", "path", "add", "delete", "from", "to") if k in f}
+            for f in data.get("files", [])
+        ],
+        "reading": data.get("reading", {}),
+    }
+    serialized_data = json.dumps(client_data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
     page_title = f'{spec.get("title", "改动汇报")} · {data.get("repoName", "oil-diff")} 改动汇报'
     return (
         "<!doctype html>\n"

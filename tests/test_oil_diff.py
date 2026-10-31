@@ -401,6 +401,33 @@ class OilDiffWorkflowTests(unittest.TestCase):
         self.assertIn("without a valid 'captureSource'", proc.stdout)
         self.assertIn("same SHA-256 as unchanged/untracked repo image", proc.stdout)
 
+    def test_chinese_filenames_and_binary_files_and_single_hunk_excerpts(self) -> None:
+        # Create a Chinese-named file and an untracked binary file
+        (self.repo / "设计说明.md").write_text("# 标题\n第一行\n第二行\n第三行\n", encoding="utf-8")
+        (self.repo / "logo.bin").write_bytes(b"\x00\x01\x02\x03BINARY_ASSET")
+        out_dir = self.repo / ".oil-diff"
+        collect_res = run_cmd(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "collect_diff.py"),
+                "--repo",
+                str(self.repo),
+                "--output",
+                str(out_dir),
+            ],
+            cwd=self.repo,
+        )
+        summary = json.loads(collect_res.stdout)
+        self.assertEqual(summary["uniquePaths"], 5)
+        diff_data = json.loads((out_dir / "assets" / "diff-data.json").read_text(encoding="utf-8"))
+        by_path = {f["path"]: f for f in diff_data["files"]}
+        self.assertIn("设计说明.md", by_path)
+        self.assertFalse(by_path["设计说明.md"]["binary"])
+        self.assertTrue(len(by_path["设计说明.md"]["chunks"]) > 0)
+        self.assertIn("logo.bin", by_path)
+        self.assertTrue(by_path["logo.bin"]["binary"])
+        self.assertEqual(by_path["logo.bin"]["chunks"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

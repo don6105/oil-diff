@@ -259,7 +259,9 @@ function openDrawer(target, trigger, {toggle = false, focus = true} = {}) {
   const switching = drawerOpen;
   const sameTarget = drawerTarget?.id === target.id;
   drawerTarget = target;
-  returnFocus = trigger || document.getElementById(target.id).querySelector('.diff-file');
+  if (trigger) returnFocus = trigger;
+  else if (!returnFocus) returnFocus = document.getElementById(target.id)?.querySelector('.diff-file');
+  setCurrent(target.requirement);
   if (!sameTarget || !drawerOpen) populateDrawer(target, switching);
   selectFile(target);
   history.replaceState(null, '', '#' + target.id);
@@ -275,16 +277,7 @@ function closeDrawer() {
   if (location.hash.startsWith('#diff-')) history.replaceState(null, '', '#requirement-' + current);
   moveDrawer(false);
 }
-function setViewMode(mode) {
-  const isBento = mode === 'bento';
-  document.body.classList.toggle('is-bento-mode', isBento);
-  for (const btn of document.querySelectorAll('[data-view-mode]')) {
-    btn.classList.toggle('is-active', btn.dataset.viewMode === mode);
-    btn.setAttribute('aria-pressed', String(btn.dataset.viewMode === mode));
-  }
-}
 function jumpToSection(number) {
-  if (document.body.classList.contains('is-bento-mode')) setViewMode('reader');
   const token = ++navigation;
   setCurrent(number);
   history.replaceState(null, '', '#requirement-' + number);
@@ -303,6 +296,9 @@ for (const button of document.querySelectorAll('.diff-file')) {
     ++navigation;
     openDrawer(targetMap.get(button.closest('.diff-card').id), button, {toggle: true});
   });
+}
+for (const section of sections) {
+  section.addEventListener('click', () => setCurrent(Number(section.dataset.requirement)));
 }
 for (const btn of document.querySelectorAll('[data-tree-toggle]')) {
   btn.addEventListener('click', () => {
@@ -331,7 +327,6 @@ if (lightbox) {
   lightbox.addEventListener('click', closeLb);
   addEventListener('keydown', event => {if (event.key === 'Escape' && !lightbox.hidden) closeLb();});
 }
-if (new URLSearchParams(location.search).get('view') === 'bento') setViewMode('bento');
 previousButton.addEventListener('click', () => {
   const target = targets[targets.indexOf(drawerTarget) - 1];
   if (target) {++navigation; openDrawer(target, null, {focus: false});}
@@ -344,7 +339,7 @@ closeButton.addEventListener('click', closeDrawer);
 backdrop.addEventListener('click', closeDrawer);
 document.addEventListener('click', event => {
   if (drawerRoot.hidden || drawer.contains(event.target)) return;
-  if (event.target.closest('.diff-file, .tree-file, [data-file-jump]')) return;
+  if (event.target.closest('.diff-file, .tree-file, [data-tree-toggle]')) return;
   event.preventDefault();
   event.stopImmediatePropagation();
   closeDrawer();
@@ -362,9 +357,6 @@ reducedMotion.addEventListener('change', () => {
   if (!drawerRoot.hidden) moveDrawer(drawerOpen, {animate: false});
 });
 for (const button of rows) button.addEventListener('click', () => jumpToFile(button.dataset.path, undefined, button));
-for (const button of document.querySelectorAll('[data-file-jump]')) {
-  button.addEventListener('click', () => {const file = sourceFiles.get(button.dataset.fileJump); jumpToFile(file.path, file.id, button);});
-}
 for (const link of document.querySelectorAll('[data-requirement-link]')) {
   link.addEventListener('click', event => {event.preventDefault(); jumpToSection(Number(link.dataset.requirementLink));});
 }
@@ -380,12 +372,23 @@ overviewObserver.observe(overview);
 function trackScroll() {
   queued = false;
   const boundary = Math.min(180, innerHeight * .22);
-  let active = sections[0];
-  for (const section of sections) {
-    if (section.getBoundingClientRect().top <= boundary) active = section;
-    else break;
+  let activeRow = [sections[0]];
+  let rowTop = sections[0].getBoundingClientRect().top;
+  for (const section of sections.slice(1)) {
+    const top = section.getBoundingClientRect().top;
+    if (Math.abs(top - rowTop) < 8) {
+      activeRow.push(section);
+    } else if (top <= boundary) {
+      activeRow = [section];
+      rowTop = top;
+    } else {
+      break;
+    }
   }
-  setCurrent(Number(active.dataset.requirement));
+  const rowNums = activeRow.map(s => Number(s.dataset.requirement));
+  if (!rowNums.includes(current)) {
+    setCurrent(rowNums[0]);
+  }
 }
 addEventListener('scroll', () => {if (!queued) {queued = true; requestAnimationFrame(trackScroll);}}, {passive: true});
 addEventListener('resize', trackScroll);

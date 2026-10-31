@@ -77,7 +77,7 @@ def check_git_isolation(repo: Path, report_dir: Path, errors: list[str]) -> None
     )
     if res.returncode == 0:
         try:
-            rel_report = str(report_dir.resolve().relative_to(repo.resolve()))
+            rel_report = report_dir.resolve().relative_to(repo.resolve()).as_posix()
             for line in res.stdout.splitlines():
                 if rel_report in line:
                     errors.append(f"Report directory '{rel_report}' appears in git status: {line.strip()}")
@@ -99,10 +99,13 @@ def collect_spec_texts(spec: dict[str, object]) -> list[str]:
             ]
         )
         for pt in item.get("points", []):
-            texts.extend([str(pt.get("title", "")), str(pt.get("copy", ""))])
-            for d in pt.get("diffs", []):
-                if d.get("role"):
-                    texts.append(str(d["role"]))
+            if isinstance(pt, list):
+                texts.extend(str(x) for x in pt[:2])
+            elif isinstance(pt, dict):
+                texts.extend([str(pt.get("title", "")), str(pt.get("copy", ""))])
+                for d in pt.get("diffs", []):
+                    if isinstance(d, dict) and d.get("role"):
+                        texts.append(str(d["role"]))
     return [t for t in texts if t]
 
 
@@ -198,12 +201,34 @@ def lint_report(repo: Path, report_dir: Path) -> tuple[list[str], list[str]]:
     if '<details class="diff-card"' in html:
         errors.append("index.html uses inline <details class=\"diff-card\"> instead of slide-over drawer triggers.")
 
+    rendered_leaf_tokens = (
+        "<img",
+        "<svg",
+        "domain-node",
+        "admin-window",
+        "shot-window",
+        "serial-node",
+        "process-node",
+        "vis-box",
+        "schema-row",
+        "pipe-row",
+        "shot-frame",
+        "shot-slider",
+        "menu-filmstrip",
+        "snapshot-grid",
+        "run-history",
+    )
     for fig_idx, fig_match in enumerate(
         re.finditer(r'<figure class="diagram"[^>]*>(.*?)</figure>', html, re.DOTALL), 1
     ):
-        if re.search(r"<p(?:\s|>)", fig_match.group(1)):
+        fig_body = fig_match.group(1)
+        if re.search(r"<p(?:\s|>)", fig_body):
             errors.append(
-                f"Diagram {fig_idx} contains <p> prose inside <figure class=\"diagram\">; keep prose in problem/example/points and use only visual elements + short tags inside diagrams."
+                f"Diagram {fig_idx} contains <p> prose inside <figure class=\"diagram\">; keep prose in overview/points and use only visual elements + short tags inside diagrams."
+            )
+        if not any(tok in fig_body for tok in rendered_leaf_tokens):
+            errors.append(
+                f"Diagram {fig_idx} rendered an empty <figure class=\"diagram\"> without any visual nodes; check 'diagram' fields in report-spec.json."
             )
 
     # 4. Screenshot authenticity & anti-scavenging check
@@ -214,24 +239,31 @@ def lint_report(repo: Path, report_dir: Path) -> tuple[list[str], list[str]]:
         diag = item.get("diagram")
         if not isinstance(diag, dict):
             continue
-        cap_source = str(diag.get("captureSource", "")).strip()
-        shot_refs: list[str] = []
+        top_cap = str(diag.get("captureSource") or item.get("captureSource") or "").strip()
+        shot_entries: list[tuple[str, str]] = []
         for k in ("beforeSrc", "afterSrc", "src"):
             if diag.get(k):
-                shot_refs.append(str(diag[k]))
+                shot_entries.append((str(diag[k]), top_cap))
         for b_key in ("before", "after"):
-            if isinstance(diag.get(b_key), dict) and diag[b_key].get("src"):
-                shot_refs.append(str(diag[b_key]["src"]))
-        for list_key in ("shots", "cards", "scenarios"):
+            b_val = diag.get(b_key)
+            if isinstance(b_val, dict) and b_val.get("src"):
+                c_src = str(b_val.get("captureSource") or top_cap).strip()
+                shot_entries.append((str(b_val["src"]), c_src))
+        for list_key in ("shots", "items", "cards", "scenarios"):
             for entry in diag.get(list_key) or []:
-                if isinstance(entry, dict) and entry.get("src"):
-                    shot_refs.append(str(entry["src"]))
-        if shot_refs and cap_source not in valid_capture_sources:
-            errors.append(
-                f"Item {idx} uses screenshots ({shot_refs[0]}) without a valid 'captureSource' in {sorted(valid_capture_sources)}. Never use unverified/research images as diff screenshots."
-            )
-        for s_ref in shot_refs:
-            referenced_shots.append((idx, s_ref, cap_source))
+                if isinstance(entry, dict):
+                    c_src = str(entry.get("captureSource") or top_cap).strip()
+                    for s_key in ("src", "beforeSrc", "afterSrc"):
+                        if entry.get(s_key):
+                            shot_entries.append((str(entry[s_key]), c_src))
+        for s_ref, c_src in shot_entries:
+            if c_src not in valid_capture_sources:
+                errors.append(
+                    f"Item {idx} uses screenshots ({s_ref}) without a valid 'captureSource' in {sorted(valid_capture_sources)}. Never use unverified/research images as diff screenshots."
+                )
+                break
+        for s_ref, c_src in shot_entries:
+            referenced_shots.append((idx, s_ref, c_src))
 
     # Build SHA-256 index of non-diff images in repo to block copying from _work/, research/, fixtures/, etc.
     img_exts = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
@@ -275,7 +307,7 @@ def lint_report(repo: Path, report_dir: Path) -> tuple[list[str], list[str]]:
                 f"Item {idx} omits structured 'diagram' spec; add 'diagram': {{'type': ...}} for richer miniature UI visuals."
             )
         for p_idx, pt in enumerate(item.get("points", []), 1):
-            diffs = pt.get("diffs", [])
+            diffs = pt.get("diffs", []) if isinstance(pt, dict) else []
             if len(diffs) == 1:
                 section_pattern = re.compile(
                     rf'<section class="change-point" id="change-{idx}-{p_idx}">(.*?)</section>',

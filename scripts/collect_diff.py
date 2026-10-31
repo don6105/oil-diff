@@ -16,7 +16,7 @@ if sys.version_info < (3, 10):
 
 def run_git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
-        ["git", *args],
+        ["git", "-c", "core.quotepath=false", *args],
         cwd=repo,
         capture_output=True,
         text=True,
@@ -89,9 +89,10 @@ def collect_range_changes(repo: Path, before_rev: str, after_rev: str) -> tuple[
         if len(parts) != 3:
             continue
         add_s, del_s, path = parts
+        is_bin = 1 if (add_s == "-" or del_s == "-") else 0
         add_n = int(add_s) if add_s.isdigit() else 0
         del_n = int(del_s) if del_s.isdigit() else 0
-        stats[path] = {"add": add_n, "delete": del_n}
+        stats[path] = {"add": add_n, "delete": del_n, "binary": is_bin}
 
     statuses: dict[str, str] = {}
     status_out = run_git(
@@ -109,8 +110,12 @@ def collect_range_changes(repo: Path, before_rev: str, after_rev: str) -> tuple[
             target = repo / path
             if target.is_symlink() or not target.is_file():
                 continue
-            text = target.read_text(encoding="utf-8", errors="replace")
-            stats[path] = {"add": len(text.splitlines()), "delete": 0}
+            raw_head = target.read_bytes()[:8192]
+            if b"\x00" in raw_head:
+                stats[path] = {"add": 0, "delete": 0, "binary": 1}
+            else:
+                text = target.read_text(encoding="utf-8", errors="replace")
+                stats[path] = {"add": len(text.splitlines()), "delete": 0, "binary": 0}
             statuses[path] = "A"
 
     return stats, statuses
@@ -202,8 +207,13 @@ def collect_diff(repo: Path, out_dir: Path, range_specs: list[str] | None = None
         stats, statuses = collect_range_changes(repo, from_rev, to_rev)
         for path, nums in stats.items():
             kind = statuses.get(path, "M")
-            old_src = read_source(repo, from_rev, path)
-            new_src = read_source(repo, to_rev, path)
+            is_binary = bool(nums.get("binary"))
+            if is_binary:
+                chunks: list[dict[str, object]] = []
+            else:
+                old_src = read_source(repo, from_rev, path)
+                new_src = read_source(repo, to_rev, path)
+                chunks = build_chunks(old_src, new_src, path.endswith(code_suffixes))
             files.append(
                 {
                     "id": f"{scope}:{path}",
@@ -212,11 +222,12 @@ def collect_diff(repo: Path, out_dir: Path, range_specs: list[str] | None = None
                     "name": Path(path).name,
                     "status": status_label(scope, kind, to_rev),
                     "kind": kind,
+                    "binary": is_binary,
                     "add": nums["add"],
                     "delete": nums["delete"],
                     "from": from_short,
                     "to": to_short,
-                    "chunks": build_chunks(old_src, new_src, path.endswith(code_suffixes)),
+                    "chunks": chunks,
                 }
             )
 
