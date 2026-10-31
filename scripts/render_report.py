@@ -380,6 +380,38 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
             f'<div class="vis-box is-good">{good_ui}<span class="vis-tag">{e(g_lbl)}</span></div></div>'
         )
 
+    if kind == "metric" or sc.get("beforeValue") or sc.get("afterValue"):
+        b_val = str(sc.get("beforeValue") or sc.get("before") or "旧指标")
+        g_val = str(sc.get("afterValue") or sc.get("after") or "新指标")
+        b_lbl = bad_tag or str(sc.get("before") or "× 修改前")
+        g_lbl = good_tag or str(sc.get("after") or "✓ 修改后")
+        bad_ui = (
+            '<div class="ui-focus-demo">'
+            f'<div class="ui-focus-row"><strong>{e(b_val)}</strong><span style="width:72%;height:6px;border-radius:99px;background:#d68d7a;display:inline-block"></span></div></div>'
+        )
+        good_ui = (
+            '<div class="ui-focus-demo">'
+            f'<div class="ui-focus-row is-focused"><strong>{e(g_val)}</strong><span style="width:28%;height:6px;border-radius:99px;background:#4f825b;display:inline-block"></span></div></div>'
+        )
+        return (
+            f'<div class="vis-pair-stack">'
+            f'<div class="vis-box is-bad">{bad_ui}<span class="vis-tag">{e(b_lbl)}</span></div>'
+            f'<div class="vis-box is-good">{good_ui}<span class="vis-tag">{e(g_lbl)}</span></div></div>'
+        )
+
+    if kind != "focus" and (sc.get("before") or sc.get("after")) and not sc.get("badRows") and not sc.get("goodRows"):
+        b_txt = str(sc.get("before") or "修改前状态")
+        g_txt = str(sc.get("after") or "修改后状态")
+        b_lbl = bad_tag or "× 修改前"
+        g_lbl = good_tag or "✓ 修改后"
+        bad_ui = f'<div class="ui-focus-demo"><div class="ui-focus-row"><span>{e(b_txt)}</span></div></div>'
+        good_ui = f'<div class="ui-focus-demo"><div class="ui-focus-row is-focused"><span>{e(g_txt)}</span></div></div>'
+        return (
+            f'<div class="vis-pair-stack">'
+            f'<div class="vis-box is-bad">{bad_ui}<span class="vis-tag">{e(b_lbl)}</span></div>'
+            f'<div class="vis-box is-good">{good_ui}<span class="vis-tag">{e(g_lbl)}</span></div></div>'
+        )
+
     bad_rows = sc.get("badRows") or [("#01 列表项 A", "状态重置"), ("#02 列表项 B", "焦点丢失")]
     good_rows = sc.get("goodRows") or [("#01 列表项 A", "保留状态"), ("#02 列表项 B", "↩ 归还焦点")]
     bad_ui = '<div class="ui-focus-demo">' + "".join(
@@ -406,21 +438,22 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             diag.get("beforeTitle")
             or diag.get("beforeState")
             or before_obj.get("state")
-            or "修改前 · 单一主线"
+            or "修改前 · 单一入口混写"
         )
-        before_file = str(diag.get("beforeFile") or before_obj.get("file") or "SKILL.md")
-        before_note = str(diag.get("beforeNote") or before_obj.get("note") or "× 改后台也混跑海报流程")
+        before_file = str(diag.get("beforeFile") or before_obj.get("file") or "入口文件")
+        before_sub = str(diag.get("beforeSub") or before_obj.get("sub") or "所有模块共用同一套流程")
+        before_note = str(diag.get("beforeNote") or before_obj.get("note") or "× 多类职责耦合在同一处")
         legacy_html = (
             f'<section class="legacy-domain">{vis_state(before_state)}'
             f'<div class="legacy-file">{artifact_file(before_file)}'
             f'<div class="mixed-pages">{domain_wire("marketing")}{domain_wire("workspace")}</div>'
-            f"<span>所有页面共用同一套流程</span></div>"
+            f"<span>{e(before_sub)}</span></div>"
             f'<div class="wrong-rule">{e(before_note)}</div></section>'
         )
         entry_obj = diag.get("entry") if isinstance(diag.get("entry"), dict) else {}
-        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 先定范围，再按页面分流")
-        entry_file = str(diag.get("entryFile") or entry_obj.get("file") or "SKILL.md")
-        entry_tag = str(diag.get("entryTag") or "① 定范围 → ② 选页面")
+        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 按职责分流到独立模块")
+        entry_file = str(diag.get("entryFile") or entry_obj.get("file") or before_file)
+        entry_tag = str(diag.get("entryTag") or "按模块职责分流")
         branches = list(diag.get("branches", []))
         wire_cycle = ["marketing", "workspace", "content", "play"]
         nodes_html: list[str] = []
@@ -651,14 +684,14 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         )
 
     if dtype == "diagnostics":
-        test_file = str(diag.get("testFile", "tests/test_domain_boundaries.py"))
+        test_file = str(diag.get("testFile") or diag.get("file") or "自动化检查与验证")
         rows_html = ""
         for idx, row in enumerate(diag.get("rows", [])):
             passed = bool(row.get("pass", idx > 0))
             b_cls = "is-pass" if passed else "is-fail"
-            left_node = str(row.get("left") or row.get("file") or "direction-persuasion.md")
-            edge_lbl = str(row.get("edge") or ("误引" if not passed else "核对"))
-            right_node = str(row.get("right") or row.get("target") or "workspace-data.md")
+            left_node = str(row.get("left") or row.get("file") or row.get("title") or f"检查项 {idx + 1}")
+            edge_lbl = str(row.get("edge") or ("拦截" if not passed else "核对"))
+            right_node = str(row.get("right") or row.get("target") or row.get("detail") or "规则断言")
             verdict = str(row.get("verdict") or ("✓ 通过" if passed else "× 拦截"))
             rows_html += (
                 f'<div class="pipe-row">'
