@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -43,6 +44,10 @@ VISUAL_PRIMITIVE_TOKENS = (
     "ui-toolbar-demo",
     "pipe-board",
     "vis-card",
+    "shot-frame",
+    "shot-slider",
+    "shot-zoom-trigger",
+    "schema-diff",
 )
 
 FORBIDDEN_NOISE_PHRASES = (
@@ -174,14 +179,21 @@ def lint_report(repo: Path, report_dir: Path) -> tuple[list[str], list[str]]:
     required_selectors = (
         'class="bg-grid"',
         'class="intro paper-card"',
-        'class="requirement paper-card"',
+        'class="requirement paper-card',
+        'id="bento-deck"',
+        'class="changes blast-funnel"',
+        'class="point-pills"',
         'class="file-sidebar"',
+        'data-tree-toggle',
         'class="diff-drawer-root"',
         'id="diff-drawer-panel"',
     )
     for token in required_selectors:
         if token not in html:
             errors.append(f"index.html is missing required structure token: {token}")
+
+    if 'id="all-files"' in html or '<details class="ledger"' in html:
+        errors.append("index.html must not render the redundant bottom #all-files ledger; use the collapsible right file sidebar instead.")
 
     if '<details class="diff-card"' in html:
         errors.append("index.html uses inline <details class=\"diff-card\"> instead of slide-over drawer triggers.")
@@ -194,7 +206,65 @@ def lint_report(repo: Path, report_dir: Path) -> tuple[list[str], list[str]]:
                 f"Diagram {fig_idx} contains <p> prose inside <figure class=\"diagram\">; keep prose in problem/example/points and use only visual elements + short tags inside diagrams."
             )
 
-    # 4. Single-file point must not render .file-explanation on the card trigger
+    # 4. Screenshot authenticity & anti-scavenging check
+    diff_paths = {str(f.get("path", "")) for f in data.get("files", [])}
+    valid_capture_sources = {"live-capture", "git-diff", "user-provided"}
+    referenced_shots: list[tuple[int, str, str]] = []
+    for idx, item in enumerate(items, 1):
+        diag = item.get("diagram")
+        if not isinstance(diag, dict):
+            continue
+        cap_source = str(diag.get("captureSource", "")).strip()
+        shot_refs: list[str] = []
+        for k in ("beforeSrc", "afterSrc", "src"):
+            if diag.get(k):
+                shot_refs.append(str(diag[k]))
+        for b_key in ("before", "after"):
+            if isinstance(diag.get(b_key), dict) and diag[b_key].get("src"):
+                shot_refs.append(str(diag[b_key]["src"]))
+        for list_key in ("shots", "cards", "scenarios"):
+            for entry in diag.get(list_key) or []:
+                if isinstance(entry, dict) and entry.get("src"):
+                    shot_refs.append(str(entry["src"]))
+        if shot_refs and cap_source not in valid_capture_sources:
+            errors.append(
+                f"Item {idx} uses screenshots ({shot_refs[0]}) without a valid 'captureSource' in {sorted(valid_capture_sources)}. Never use unverified/research images as diff screenshots."
+            )
+        for s_ref in shot_refs:
+            referenced_shots.append((idx, s_ref, cap_source))
+
+    # Build SHA-256 index of non-diff images in repo to block copying from _work/, research/, fixtures/, etc.
+    img_exts = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+    shot_files_in_report = [
+        p for p in (report_dir / "assets").rglob("*") if p.is_file() and p.suffix.lower() in img_exts
+    ]
+    if shot_files_in_report or referenced_shots:
+        non_diff_repo_hashes: dict[str, str] = {}
+        skip_dirs = {".git", ".oil-diff", "node_modules", ".venv", "__pycache__"}
+        for root_path in repo.rglob("*"):
+            if not root_path.is_file() or root_path.suffix.lower() not in img_exts:
+                continue
+            rel_parts = root_path.relative_to(repo).parts
+            if any(part in skip_dirs for part in rel_parts):
+                continue
+            rel_posix = root_path.relative_to(repo).as_posix()
+            if rel_posix not in diff_paths:
+                try:
+                    h = hashlib.sha256(root_path.read_bytes()).hexdigest()
+                    non_diff_repo_hashes.setdefault(h, rel_posix)
+                except OSError:
+                    pass
+        for shot_p in shot_files_in_report:
+            try:
+                shot_h = hashlib.sha256(shot_p.read_bytes()).hexdigest()
+            except OSError:
+                continue
+            if shot_h in non_diff_repo_hashes:
+                errors.append(
+                    f"Screenshot '{shot_p.relative_to(report_dir)}' has the exact same SHA-256 as unchanged/untracked repo image '{non_diff_repo_hashes[shot_h]}' (not in git diff). Never copy research/reference images into diff reports!"
+                )
+
+    # 5. Single-file point must not render .file-explanation on the card trigger
     for idx, item in enumerate(items, 1):
         if item.get("diagramHtml") and not any(tok in str(item["diagramHtml"]) for tok in VISUAL_PRIMITIVE_TOKENS):
             errors.append(

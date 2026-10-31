@@ -53,8 +53,8 @@ metadata:
 
 先读取 [视觉风格、可视化模式与交互规范](references/visual-and-interaction.md)。在 `.oil-diff/assets/report-spec.json` 的每个章节项中配置结构化 `"diagram"` 对象（遵循「配图是配图，文字是文字」，`<figure class="diagram">` 内严禁出现 `<p>` 段落长句）：
 
-- **真实截图防伪铁律（`type: "screenshots"` 仅限真实运行产物）**：只有当本次改动确实由 Agent 实机运行并截出画面、用户明确提供了本次改动的实测截图、或图片本身就是本次 Git Diff 的跟踪文件时，才允许放入 `<output>/assets/shots/` 并使用 `"type": "screenshots"`。**严禁从仓库的临时目录（如 `_work/`、调研素材、网上参考图）拿非本次实测的图片冒充修改前后截图**；纯文档、规则或后端改动无真实运行截图时，一律使用下方的矢量微缩积木。
-- **无实拍图时选用 5 类纯视觉积木**：从 `"type": "routing" | "scenarios" | "flow" | "schema" | "diagnostics"`（或 `"comparison" | "alignment"`）中选择与章节主题 100% 对应的结构化模式，由渲染器生成文件路由树、真实控件标本（柱状图/下拉框/焦点环）、流程并流图、数据结构/API 字段对比（`schema`）或三段式检查管道。
+- **真实截图防伪铁律（`type: "screenshots"` 仅限真实运行产物，必须标注 `captureSource`）**：只有当本次改动确实由 Agent 实机运行并截出画面（`"captureSource": "live-capture"`）、用户明确提供了本次改动的实测截图（`"captureSource": "user-provided"`）、或图片本身就是本次 Git Diff 的跟踪文件（`"captureSource": "git-diff"`）时，才允许放入 `<output>/assets/shots/` 并使用截图字段。**严禁从仓库的临时目录（如 `_work/`、`research/`、调研素材、网上参考图）拷贝非本次实测的图片冒充修改前后截图**；`scripts/lint_report.py` 会通过 SHA-256 哈希比对自动拦截任何从仓库非改动区拷贝的图片。纯文档、规则或后端改动无真实运行截图时，一律使用下方的矢量微缩积木。
+- **无实拍图时选用 5 类纯视觉积木**：从 `"type": "routing" | "scenarios" | "flow" | "schema" | "diagnostics"`（或 `"comparison" | "alignment"`）中选择与章节主题 100% 对应的结构化模式，并根据项目实际业务填写自定义字段（如 `brand`、`goodHeading`、`badText`、`goodText`），避免直接沿用无关兜底词。
 - 如需自定义 `diagramHtml`，必须包含微缩视觉图元且只放 2～10 字的极简短标签，严禁塞入 `<p>` 段落句子。
 
 ### 4. 渲染自包含 HTML 汇报页（Bento 看板与分类必看漏斗）
@@ -66,20 +66,23 @@ metadata:
 ```
 
 渲染器会自动校验所有改动文件是否均已归入章节、核对摘录行号是否存在，并嵌入 [assets/report.css](assets/report.css) 与 [assets/report.js](assets/report.js)，生成包含以下核心能力的 `index.html`：
-- **默认 Bento 看板布局（`#bento-deck`）**：首屏通过紧凑模块卡片导航直达各章，主体采用双列 Bento 书页网格，高密度整合每章结论、实拍截图/架构图与改动要点，避免冗余重复文本；
-- **按具体改动分类的「🎯 核心必看 / 📎 外围同步」漏斗**：在每个章节卡底部，将核心代码文件（`🎯 核心必看`）直接归类挂在 `1`、`2` 具体改法要点下方，将顺手同步的外围引用文件收进底部的 `📎 外围同步` 折叠条；
-- **单行改动文件树与右侧原文对照抽屉**：点击任一核心文件胶囊、外围同步文件或右侧文件树，从右侧滑出 `720px` 代码对照抽屉。
+- **默认 Bento 看板布局（`#bento-deck`）**：首屏通过单行紧凑模块卡片（`1..N`）导航直达各章，不重复摘抄正文段落；主体采用双列 Bento 书页网格，高密度整合每章结论、实拍截图/架构图与改动要点，不输出底部冗余全量文件表（`#all-files`）；
+- **按具体改动分类的「🎯 核心必看 / 📎 外围同步」漏斗**：在每个章节卡底部，将核心代码文件（`🎯 核心必看`）直接归类挂在 `1`、`2` 具体改法要点下方（`.point-pills`），将顺手同步的外围引用文件收进底部的 `📎 外围同步` 折叠条；
+- **可收起的窄栏改动文件树与右侧原文对照抽屉**：右侧文件树默认 `256px` 窄栏并支持一键「收起 ⇥ / ⇤ 文件树」释放全宽画布；点击任一核心文件胶囊、外围同步文件或右侧文件树，从右侧滑出 `720px` 代码对照抽屉。
 
-### 5. 质量核验与视觉检查
+### 5. 质量核验与双视口视觉检查
 
-渲染完成后，运行 [scripts/lint_report.py](scripts/lint_report.py) 执行静态质量与安全边界检查：
+渲染完成后，运行 [scripts/lint_report.py](scripts/lint_report.py) 执行静态质量、防伪与安全边界检查：
 
 ```text
 <python> scripts/lint_report.py --repo <目标仓库路径> --report-dir <output>
 ```
 
-- 校验器会检查：文风禁用词与机械兜底套话、单文件要点是否残留重复摘要、文件条是否全部使用右侧抽屉触发结构（`div.diff-card > button.diff-file`）、`.gitignore` 是否严格隔离、以及仓库 `git status` 是否未被污染。
-- 若当前宿主提供浏览器工具，在桌面与窄屏尺寸下打开 `<output>/index.html`，截取静态图片检查首屏总览、各章 HTML/CSS 可视化舞台、单行文件树高亮以及点击文件条滑出右侧原文对照抽屉的效果。只用静态截图与 DOM 检查，不录制视频。
+- 校验器会强制检查：
+  1. **截图真实性防伪（SHA-256 比对 + `captureSource` 核验）**：拦截未声明 `captureSource` 的截图，以及从仓库非 Diff 目录（如 `_work/`、历史素材）搬运冒充的图片；
+  2. **配图零段落与排版精简**：禁止 `<figure class="diagram">` 内出现 `<p>` 段落句子，确认启用 `#bento-deck`、按要点分类的 `.point-pills`、文件树折叠按钮 `[data-tree-toggle]`，且无冗余 `#all-files` 总表；
+  3. **文风与仓库零污染**：拦截空洞套话、检查 `.gitignore` 严格隔离及仓库 `git status` 未被污染。
+- 若当前宿主提供浏览器工具，必须在 **宽屏桌面（`1440px`）与小屏笔记本（`1100px`）双视口** 下打开 `<output>/index.html` 截图检查：确认小屏下双列卡片或三联图未发生文字挤压截断、文件树一键收起与展开正常、点击文件胶囊滑出右侧原文对照抽屉正常。只用静态截图与 DOM 检查，不录制视频。
 
 ## 资源导航
 

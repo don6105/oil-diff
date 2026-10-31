@@ -292,6 +292,7 @@ class OilDiffWorkflowTests(unittest.TestCase):
                         "diagram": {
                             "type": dtype,
                             "mode": "slider",
+                            "captureSource": "live-capture",
                             "before": {"src": "assets/shots/before.png", "title": "修改前", "tag": "× 旧界面"},
                             "after": {"src": "assets/shots/after.png", "title": "修改后", "tag": "✓ 新界面"},
                             "branches": [{"title": "分支 A", "file": "SKILL.md", "copy": "说明"}],
@@ -325,6 +326,80 @@ class OilDiffWorkflowTests(unittest.TestCase):
                 cwd=self.repo,
             )
             self.assertIn("PASS: 0 errors", lint_res.stdout)
+
+    def test_lint_blocks_scavenged_repo_screenshots_and_missing_capture_source(self) -> None:
+        out_dir = self.repo / ".oil-diff"
+        run_cmd(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "collect_diff.py"),
+                "--repo",
+                str(self.repo),
+                "--output",
+                str(out_dir),
+            ],
+            cwd=self.repo,
+        )
+
+        # Simulate a gitignored/untracked research directory in the repo with an online reference image
+        work_dir = self.repo / "_work" / "research"
+        work_dir.mkdir(parents=True)
+        fake_png = work_dir / "online-ref.png"
+        fake_png.write_bytes(b"\x89PNG\r\n\x1a\nFAKE_RESEARCH_IMAGE_PAYLOAD")
+
+        # Copy the fake research image into .oil-diff/assets/shots/
+        shots_dir = out_dir / "assets" / "shots"
+        shots_dir.mkdir(parents=True, exist_ok=True)
+        (shots_dir / "copied-ref.png").write_bytes(fake_png.read_bytes())
+
+        spec = {
+            "title": "这次修改了哪 1 件事",
+            "summary": "调整了主流程说明与文件边界。",
+            "items": [
+                {
+                    "number": 1,
+                    "module": "主流程",
+                    "navLabel": "主流程",
+                    "title": "优化了主流程说明与文件规则",
+                    "overview": "优化了主流程说明与文件规则，确保上下游一致。",
+                    "diagram": {
+                        "type": "screenshots",
+                        "mode": "grid",
+                        "shots": [{"src": "assets/shots/copied-ref.png", "title": "假实拍图"}],
+                    },
+                    "fileIds": [
+                        "working:SKILL.md",
+                        "working:references/guide.md",
+                        "working:README.md",
+                    ],
+                    "points": [],
+                }
+            ],
+        }
+        spec_path = out_dir / "assets" / "report-spec.json"
+        spec_path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
+        run_cmd(
+            [sys.executable, str(SCRIPTS_DIR / "render_report.py"), "--report-dir", str(out_dir)],
+            cwd=self.repo,
+        )
+        proc = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPTS_DIR / "lint_report.py"),
+                "--repo",
+                str(self.repo),
+                "--report-dir",
+                str(out_dir),
+            ],
+            cwd=self.repo,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn("without a valid 'captureSource'", proc.stdout)
+        self.assertIn("same SHA-256 as unchanged/untracked repo image", proc.stdout)
 
 
 if __name__ == "__main__":
