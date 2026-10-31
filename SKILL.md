@@ -29,6 +29,13 @@ metadata:
 
 ## 执行工作流
 
+> **默认委托独立子 Agent 执行（保护主对话上下文）**：
+> 若当前是主对话 Agent 且宿主支持启动子 Agent，**优先启动一个具备读写与命令执行能力的独立子 Agent** 跑完下方第 1～5 步闭环（避免大体积 `diff-data.json` 撑爆主对话上下文）；若自身已是子 Agent 或宿主不支持子 Agent，则在当前上下文直接执行。
+> **主 Agent 启动子 Agent 时必须交接以下 3 项事实（防止子 Agent 脱离上下文盲猜）**：
+> 1. **入口与目标**：本 `SKILL.md` 的路径、目标仓库路径与比较范围（要求子 Agent 先完整阅读本 `SKILL.md`、[references/copywriting-and-structure.md](references/copywriting-and-structure.md) 与 [references/visual-and-interaction.md](references/visual-and-interaction.md)）；
+> 2. **本轮真实背景摘要**：用 3～5 句话概括本轮改动的目的、解决了什么问题（若主对话刚完成这轮修改，直接把真实意图告诉子 Agent）；
+> 3. **实测截图白名单**：明确列出本轮是否有真实运行截出的图片路径；**若无真实实测截图，必须明确指令子 Agent：“本轮无实测截图，严禁从仓库 `_work/`、`research/` 等目录找图，全部使用内置矢量视觉积木”**。
+
 ### 1. 采集确定性 Git 改动数据
 
 确定要汇报的仓库路径与比较范围（如未提交工作区、最近一轮提交，或 `base..head` 多段提交范围），运行 [scripts/collect_diff.py](scripts/collect_diff.py)：
@@ -46,8 +53,6 @@ metadata:
 1. **业务模块与标题**：每件事必须标注简短的 `module`（业务模块胶囊，如 `工作区评审`、`截图工具 shoot.mjs`），标题遵循「所属业务模块/工具 + 具体动作 + 机制变化」，禁止写成脱离项目语境的泛泛常识句。
 2. **背景痛点与生活化例子**：用平实中文说明原来怎么做、会遇到什么具体麻烦，并配一个一句就能懂的 `example` 日常场景，把作者自造缩写翻译为具体动作。
 3. **具体改法要点与原文证据关联**：每件事拆分为 2～4 个改法要点（`points`），关联对应文件的核心修改行号。当一个要点下只有 1 个文件时，不写重复的 `.file-explanation` 摘要；外围顺手同步修改的文档统一归入章节底部的折叠汇总条。
-
-若目标仓库改动较大，可将 `.oil-diff/assets/diff-data.json` 与两份参考资料交给独立子 Agent 起草或审校 `.oil-diff/assets/report-spec.json`，主 Agent 负责复核业务准确性。
 
 ### 3. 配置实拍截图与微缩可视化舞台（配图零段落）
 
