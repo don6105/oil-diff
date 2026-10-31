@@ -380,13 +380,13 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
 
     bad_ui = (
         '<div class="ui-focus-demo">'
-        '<div class="ui-focus-row"><span>#01 华东门店</span><span>筛选已清空</span></div>'
-        '<div class="ui-focus-row"><span>#02 华南门店</span><span>焦点丢失</span></div></div>'
+        '<div class="ui-focus-row"><span>#01 华东店</span><span>筛选重置</span></div>'
+        '<div class="ui-focus-row"><span>#02 华南店</span><span>焦点丢失</span></div></div>'
     )
     good_ui = (
         '<div class="ui-focus-demo">'
-        '<div class="ui-focus-row"><span>#01 华东门店</span><span>保留原筛选</span></div>'
-        '<div class="ui-focus-row is-focused"><span>#02 华南门店</span><span>↩ 焦点归还</span></div></div>'
+        '<div class="ui-focus-row"><span>#01 华东店</span><span>保留筛选</span></div>'
+        '<div class="ui-focus-row is-focused"><span>#02 华南店</span><span>↩ 归还焦点</span></div></div>'
     )
     b_lbl = bad_tag or "× 关抽屉丢筛选与焦点"
     g_lbl = good_tag or "✓ 保留筛选 · 焦点回原行"
@@ -956,11 +956,13 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
 
     repo_label = str(data.get("repoName") or "repository")
     sidebar = (
-        '<aside class="file-sidebar" aria-label="改动文件树">'
+        '<aside class="file-sidebar" id="file-sidebar" aria-label="改动文件树">'
         '<header class="tree-header"><div class="tree-heading">'
-        f'<h2>改动文件树</h2><span class="repository-label">{e(repo_label)}</span>'
-        '</div></header><div class="tree-scroll" id="tree-scroll">'
+        f'<h2>改动文件树</h2><span class="repository-label">{e(repo_label)}</span></div>'
+        '<button type="button" class="tree-toggle-btn" data-tree-toggle title="收起改动文件树" aria-label="收起改动文件树">收起 ⇥</button>'
+        '</header><div class="tree-scroll" id="tree-scroll">'
         f"{tree_html(tree)}</div></aside>"
+        f'<button type="button" class="tree-reopen-btn" data-tree-toggle title="展开改动文件树" aria-label="展开改动文件树">⇤ 文件树 ({data["uniquePaths"]})</button>'
     )
 
     drawer = (

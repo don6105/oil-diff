@@ -53,7 +53,7 @@ metadata:
 
 先读取 [视觉风格、可视化模式与交互规范](references/visual-and-interaction.md)。在 `.oil-diff/assets/report-spec.json` 的每个章节项中配置结构化 `"diagram"` 对象（遵循「配图是配图，文字是文字」，`<figure class="diagram">` 内严禁出现 `<p>` 段落长句）：
 
-- **优先嵌入真实截图（`type: "screenshots"` 或 `scenarios` 卡片的 `src`）**：当改动涉及页面 UI、终端输出，或项目/Agent 可通过浏览器工具截取画面时，将图片保存到 `<output>/assets/shots/`，使用 `"type": "screenshots"`（支持 `mode: "slider"` 拖拽滑块对比、`"pair"` 左右双图对比、`"gallery"` 多图画廊，以及点击放大 Lightbox）。
+- **真实截图防伪铁律（`type: "screenshots"` 仅限真实运行产物）**：只有当本次改动确实由 Agent 实机运行并截出画面、用户明确提供了本次改动的实测截图、或图片本身就是本次 Git Diff 的跟踪文件时，才允许放入 `<output>/assets/shots/` 并使用 `"type": "screenshots"`。**严禁从仓库的临时目录（如 `_work/`、调研素材、网上参考图）拿非本次实测的图片冒充修改前后截图**；纯文档、规则或后端改动无真实运行截图时，一律使用下方的矢量微缩积木。
 - **无实拍图时选用 5 类纯视觉积木**：从 `"type": "routing" | "scenarios" | "flow" | "schema" | "diagnostics"`（或 `"comparison" | "alignment"`）中选择与章节主题 100% 对应的结构化模式，由渲染器生成文件路由树、真实控件标本（柱状图/下拉框/焦点环）、流程并流图、数据结构/API 字段对比（`schema`）或三段式检查管道。
 - 如需自定义 `diagramHtml`，必须包含微缩视觉图元且只放 2～10 字的极简短标签，严禁塞入 `<p>` 段落句子。
 

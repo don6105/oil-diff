@@ -324,11 +324,10 @@ for (const button of document.querySelectorAll('.diff-file')) {
     openDrawer(targetMap.get(button.closest('.diff-card').id), button, {toggle: true});
   });
 }
-for (const btn of document.querySelectorAll('[data-view-mode]')) {
-  btn.addEventListener('click', () => setViewMode(btn.dataset.viewMode));
-}
-for (const btn of document.querySelectorAll('[data-bento-jump]')) {
-  btn.addEventListener('click', () => jumpToSection(Number(btn.dataset.bentoJump)));
+for (const btn of document.querySelectorAll('[data-tree-toggle]')) {
+  btn.addEventListener('click', () => {
+    document.body.classList.toggle('is-tree-collapsed');
+  });
 }
 for (const slider of document.querySelectorAll('.shot-slider-input')) {
   slider.addEventListener('input', () => {
