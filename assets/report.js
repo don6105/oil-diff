@@ -113,17 +113,7 @@ function targetFor(path, preferredFile) {
   return available.find(target => target.requirement === current && (!preferredFile || target.fileId === preferredFile)) ||
     available.find(target => !preferredFile || target.fileId === preferredFile) || available[0];
 }
-function ensureTreeVisible() {
-  const related = rows.filter(row => row.classList.contains('is-current'));
-  const view = list.getBoundingClientRect();
-  if (related.some(row => {const r = row.getBoundingClientRect(); return r.height && r.top >= view.top && r.bottom <= view.bottom;})) return;
-  const row = related.find(row => row.getBoundingClientRect().height);
-  if (!row) return;
-  const rect = row.getBoundingClientRect();
-  const distance = rect.top < view.top ? rect.top - view.top - 4 : rect.bottom - view.bottom + 4;
-  list.scrollBy({top: distance, behavior: reducedMotion.matches ? 'instant' : 'smooth'});
-}
-function updateTree(scroll = false) {
+function updateTree() {
   for (const row of rows) {
     const path = paths.get(row.dataset.path);
     const matches = path.requirements.includes(current);
@@ -137,20 +127,14 @@ function updateTree(scroll = false) {
     if (path.path === selectedPath) row.setAttribute('aria-current', 'location');
     else row.removeAttribute('aria-current');
   }
-  const pending = [];
-  for (const folder of document.querySelectorAll('.tree-folder')) {
-    if (folder.querySelector('.tree-file.is-current')) pending.push(setExpanded(folder, true));
-  }
   document.querySelectorAll('[data-requirement-link]').forEach(link => {
     link.setAttribute('aria-current', String(Number(link.dataset.requirementLink) === current));
   });
-  const chapter = current;
-  if (scroll) Promise.all(pending).then(() => {if (current === chapter) ensureTreeVisible();});
 }
-function setCurrent(number, scroll = true) {
+function setCurrent(number) {
   if (current === number) return;
   current = number;
-  updateTree(scroll);
+  updateTree();
 }
 function scrollIntoPlace(element) {
   const behavior = reducedMotion.matches ? 'instant' : 'smooth';
@@ -311,12 +295,8 @@ function jumpToFile(path, fileId, trigger) {
   if (target) jumpToFileTarget(target, trigger);
 }
 function jumpToFileTarget(target, trigger) {
-  const token = ++navigation;
-  setCurrent(target.requirement, false);
-  openDrawer(target, trigger);
-  if (!document.body.classList.contains('is-bento-mode')) {
-    scrollToTarget(document.getElementById(target.id), token, true);
-  }
+  ++navigation;
+  openDrawer(target, trigger, {toggle: true});
 }
 for (const button of document.querySelectorAll('.diff-file')) {
   button.addEventListener('click', () => {
