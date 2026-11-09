@@ -247,6 +247,56 @@ class DrawerResize {
 }
 new DrawerResize(drawer);
 
+class ComparisonResize {
+  #panel;
+  #drag = null;
+
+  // 抽屜內容會隨檔案替換，以事件委派處理所有原文對照的分隔線
+  constructor(panel) {
+    this.#panel = panel;
+    panel.addEventListener('pointerdown', event => this.#start(event));
+    panel.addEventListener('pointermove', event => this.#move(event));
+    for (const name of ['pointerup', 'lostpointercapture']) {
+      panel.addEventListener(name, event => {
+        if (this.#drag?.pointerId === event.pointerId) this.cancel();
+      });
+    }
+  }
+
+  // 按住中間分隔線後捕捉滑鼠，保留按下位置以避免比例突然跳動
+  #start(event) {
+    const handle = event.target.closest('[data-compare-resize]');
+    if (!handle || this.#drag || event.button !== 0 || !event.isPrimary) return;
+    event.preventDefault();
+    const compare = handle.closest('.compare');
+    const before = compare.querySelector('.old-side').getBoundingClientRect();
+    this.#drag = {pointerId: event.pointerId, handle, compare, offset: event.clientX - before.right};
+    handle.setPointerCapture(event.pointerId);
+    document.body.classList.add('is-compare-resizing');
+  }
+
+  // 各側至少保留兩成空間，抽屜內所有原文對照沿用同一比例
+  #move(event) {
+    if (this.#drag?.pointerId !== event.pointerId) return;
+    const {handle, compare, offset} = this.#drag;
+    if (!handle.offsetWidth) {this.cancel(); return;}
+    const left = compare.getBoundingClientRect().left + compare.clientLeft;
+    const available = compare.clientWidth - handle.offsetWidth;
+    const ratio = Math.max(.2, Math.min(.8, (event.clientX - left - offset) / available));
+    this.#panel.style.setProperty('--compare-before', ratio + 'fr');
+    this.#panel.style.setProperty('--compare-after', (1 - ratio) + 'fr');
+  }
+
+  // 切換檔案或關閉抽屜前結束拖曳，避免舊分隔線留下滑鼠捕捉狀態
+  cancel() {
+    const drag = this.#drag;
+    this.#drag = null;
+    document.body.classList.remove('is-compare-resizing');
+    if (drag?.handle.hasPointerCapture(drag.pointerId)) drag.handle.releasePointerCapture(drag.pointerId);
+  }
+}
+const comparisonResize = new ComparisonResize(drawer);
+
 function selectFile(target) {
   for (const card of document.querySelectorAll('.diff-card.is-active')) {
     card.classList.remove('is-active');
@@ -262,6 +312,7 @@ function selectFile(target) {
   updateTree(false);
 }
 function populateDrawer(target, switching) {
+  comparisonResize.cancel();
   for (const animation of contentAnimations) animation.cancel();
   contentAnimations = [];
   for (const details of drawerBody.querySelectorAll('details')) {
@@ -332,6 +383,7 @@ function openDrawer(target, trigger, {toggle = false, focus = true} = {}) {
 }
 function closeDrawer() {
   if (!drawerOpen) return;
+  comparisonResize.cancel();
   ++navigation;
   drawerOpen = false;
   selectFile(null);

@@ -95,6 +95,8 @@ def comparison_html(before: list[dict[str, object]], after: list[dict[str, objec
         ("new", "修改後", after, str(f.get("to", ""))),
     ]
     for index, (kind, title, rows, rev) in enumerate(sides):
+        if index:
+            pair += '<div class="compare-resize-handle" data-compare-resize title="拖曳調整修改前 / 修改後的寬度比例" aria-hidden="true"></div>'
         pair += (
             f'<section class="compare-side {kind}-side">'
             f'<div class="compare-heading"><strong>{title}</strong><span>{e(rev)}</span></div>'
@@ -119,7 +121,8 @@ def comparison_html(before: list[dict[str, object]], after: list[dict[str, objec
                 if last is not None and line_no != last + 1:
                     pair += '<span class="source-gap">…</span>'
                 mask = masks[index][offset : offset + len(row_text)]
-                changed_cls = " has-change" if any(mask) else ""
+                # 空白行沒有字元可標色，仍需保留行級差異底色
+                changed_cls = " has-change" if row.get("changed") or any(mask) else ""
                 rendered_code = colored_text(row_text, mask) or " "
                 pair += (
                     f'<span class="source-line{changed_cls}">'
