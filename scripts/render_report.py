@@ -1085,10 +1085,12 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
     )
 
 
+# 產生可單獨散布的報告頁，連同內嵌資源附上完整授權聲明
 def render_html_document(data: dict[str, object], spec: dict[str, object]) -> str:
     body_html = render_report_body(data, spec)
     css_text = (ASSETS_DIR / "report.css").read_text(encoding="utf-8")
     js_text = (ASSETS_DIR / "report.js").read_text(encoding="utf-8")
+    license_text = (SKILL_ROOT / "LICENSE").read_text(encoding="utf-8")
     client_data = {
         "files": [
             {k: f[k] for k in ("id", "path", "add", "delete", "from", "to") if k in f}
@@ -1100,6 +1102,7 @@ def render_html_document(data: dict[str, object], spec: dict[str, object]) -> st
     page_title = f'{spec.get("title", "變更報告")} · {data.get("repoName", "oil-diff")} 變更報告'
     return (
         "<!doctype html>\n"
+        f"<!--\n{license_text}\n-->\n"
         '<html lang="zh-TW">\n'
         "<head>\n"
         '<meta charset="utf-8">\n'
