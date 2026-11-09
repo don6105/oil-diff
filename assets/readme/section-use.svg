@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="140" viewBox="0 0 1200 140" role="img" aria-labelledby="title desc">
-  <title id="title">04 安装与使用：一句话交给 Agent，或按脚本运行</title>
-  <desc id="desc">介绍如何安装 oil-diff 并通过自然语言指令或命令行脚本生成改动汇报页。</desc>
+  <title id="title">04 安裝與使用：交給 Agent 處理，或執行指令碼</title>
+  <desc id="desc">介紹如何安裝 oil-diff，並透過對話或命令列產生變更報告頁。</desc>
   <defs>
     <pattern id="g4" width="32" height="32" patternUnits="userSpaceOnUse">
       <path d="M32 0H0V32" fill="none" stroke="#DFD5C3" stroke-width="1" stroke-opacity="0.6"/>
@@ -9,10 +9,10 @@
   <rect width="1200" height="140" rx="22" fill="#FAF8F4"/>
   <rect width="1200" height="140" rx="22" fill="url(#g4)"/>
   <rect x="1" y="1" width="1198" height="138" rx="21" fill="none" stroke="#DFD5C3" stroke-width="1.5"/>
-  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif">
+  <g font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif">
     <text x="56" y="36" fill="#6E685F" font-size="15" font-weight="700" letter-spacing="2.4">04 · QUICK START</text>
     <rect x="56" y="48" width="52" height="5" rx="2.5" fill="#B6483C"/>
-    <text x="56" y="104" fill="#1A1916" font-size="38" font-weight="800">安装与使用：直接把仓库或分支交给你的 Agent</text>
+    <text x="56" y="104" fill="#1A1916" font-size="38" font-weight="800">安裝與使用：將儲存庫或分支交給 Agent</text>
     <text x="1064" y="106" fill="#E3DAC8" font-family="ui-monospace,'SFMono-Regular',Menlo,monospace" font-size="72" font-weight="800">04</text>
     <circle cx="1032" cy="96" r="7" fill="#B6483C"/>
   </g>

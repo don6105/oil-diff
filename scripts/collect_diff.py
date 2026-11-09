@@ -49,7 +49,7 @@ def infer_location(lines: list[str], position: int, is_code: bool) -> str:
             return line.strip()[:140]
         if not is_code and line.startswith("#"):
             return line.lstrip("#").strip()[:140]
-    return "文件内容"
+    return "檔案內容"
 
 
 def build_chunks(old_text: str, new_text: str, is_code: bool) -> list[dict[str, object]]:
@@ -133,7 +133,7 @@ def parse_range_spec(spec: str) -> tuple[str, str, str, str]:
 
 def resolve_short_rev(repo: Path, rev: str) -> str:
     if rev == "WT":
-        return "当前工作区"
+        return "目前工作區"
     full = run_git(repo, "rev-parse", f"{rev}^{{commit}}").stdout.strip()
     return full[:7]
 
@@ -142,13 +142,13 @@ def default_ranges(repo: Path) -> list[tuple[str, str, str, str]]:
     ranges: list[tuple[str, str, str, str]] = []
     wt_stats, _ = collect_range_changes(repo, "HEAD", "WT")
     if wt_stats:
-        ranges.append(("working", "当前未提交", "HEAD", "WT"))
+        ranges.append(("working", "目前尚未提交", "HEAD", "WT"))
     has_parent = run_git(repo, "rev-parse", "--verify", "HEAD~1", check=False).returncode == 0
     if has_parent:
         if not wt_stats:
-            ranges.append(("working", "最近一轮提交", "HEAD~1", "HEAD"))
+            ranges.append(("working", "最近一次提交", "HEAD~1", "HEAD"))
         else:
-            ranges.append(("committed", "最近一轮提交", "HEAD~1", "HEAD"))
+            ranges.append(("committed", "最近一次提交", "HEAD~1", "HEAD"))
     return ranges
 
 
@@ -179,7 +179,7 @@ def status_label(scope: str, kind: str, to_rev: str) -> str:
     if kind == "A":
         return "未提交新增" if uncommitted else "已提交新增"
     if kind == "D":
-        return "已删除"
+        return "已刪除"
     return "未提交修改" if uncommitted else "已提交修改"
 
 

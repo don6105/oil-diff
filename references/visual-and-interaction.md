@@ -9,7 +9,7 @@
 1. **底层画布与 `32px` 网页网格线（`.bg-grid` + `.bg-fade`）**：
    - 背景色 `--paper: #faf8f4`；
    - 全屏固定铺设 `32px × 32px` 暖墨细网格线（`rgba(38, 36, 33, 0.038) 1px`），顶部叠加暖琥珀柔光（`radial-gradient(ellipse 80% 50% at 50% -10%, rgba(242, 196, 90, 0.11), transparent 70%)`）；
-   - 页面最大宽度 `1320px`，两侧与章节卡之间露出底层的 `32px` 网格线。
+   - 頁面寬度與兩側留白以 [assets/report.css](../assets/report.css) 的 `.report-layout` 為準。
 2. **独立书页卡片（`.paper-card`）**：
    - 表面色 `--page-sheet: #fffdf9`，将底层网格线隔绝在阅读容器之外，保证正文与图示零干扰；
    - 描边 `1px solid #e2d8c7`，圆角 `8px 12px 12px 8px`，带左侧微妙装订折痕内阴影（`inset 12px 0 0 -11px rgba(212, 198, 174, 0.35)`）与底部叠纸投影；
@@ -55,7 +55,11 @@
    - 随左侧正文滚动，属于当前章节的文件整行呈现柔和浅琥珀底色（`.is-current`，`#f6ebd2`）；当前被点击查看的文件呈现深琥珀胶囊（`[aria-current="location"]`，`#edd7a4` + `1px` 内阴影）。点击右侧文件树时**不触发主页面或文件树自动滚动**，避免当前点击项移位。
 2. **右侧滑出式原文对照抽屉（`.diff-drawer-root` / `aside.diff-drawer`）**：
    - 正文中的所有文件条均为 `<div class="diff-card"><button type="button" class="diff-file">`，**不在正文中原地向下展开代码**，确保左侧正文高度与滚动位置绝对稳定。
-   - 点击正文核心文件胶囊、章底外围同步文件、右侧文件树或通过 `#diff-...` 锚点进入时，从视口右侧滑出 `720px` 宽的书页纸抽屉面板（滑入 `280ms`、滑出 `220ms`，缓动 `cubic-bezier(0.22, 1, 0.36, 1)`）。
+   - 點選檔案或透過 `#diff-...` 錨點進入時，從視窗右側開啟原文對照抽屜。
+     - 拖曳左側邊緣可調整寬度，並以 `localStorage` 記住結果。
+     - 預設寬度與寬度限制見 [assets/report.css](../assets/report.css) 的 `.diff-drawer`。
+     - 儲存功能不可用時，仍可在本次頁面調整寬度。
+     - 滑入 `280ms`、滑出 `220ms`，緩動為 `cubic-bezier(0.22, 1, 0.36, 1)`。
    - 抽屉头部展示所属章节与要点上下文胶囊（`.drawer-context`）、文件图标与完整路径、`← 上一处 / 下一处 →` 切换按钮及 `✕` 关闭按钮；抽屉已打开时切换文件，对内部内容执行 `180ms` 淡入微移过渡。
 3. **可中断 WAAPI 折叠控制器**：
    - 章底外围同步文件折叠条（`details.related-files`）、抽屉内的其余修改（`details.complete-diff`）与文件树目录（`details.tree-folder`）共用 `assets/report.js` 中的可中断 Web Animations API 控制器（展开 `250ms` / 折起 `210ms`），并在 `prefers-reduced-motion: reduce` 下自动切换为瞬时响应。

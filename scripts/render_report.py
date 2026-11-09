@@ -92,7 +92,7 @@ def comparison_html(before: list[dict[str, object]], after: list[dict[str, objec
     pair = '<div class="compare">'
     sides = [
         ("old", "修改前", before, str(f.get("from", ""))),
-        ("new", "修改后", after, str(f.get("to", ""))),
+        ("new", "修改後", after, str(f.get("to", ""))),
     ]
     for index, (kind, title, rows, rev) in enumerate(sides):
         pair += (
@@ -101,12 +101,12 @@ def comparison_html(before: list[dict[str, object]], after: list[dict[str, objec
         )
         if not rows:
             if f.get("binary"):
-                empty_msg = "二进制文件或静态资源，不展示文本行级对比。"
+                empty_msg = "二進位檔案或靜態資源，不顯示逐行文字比較。"
             else:
                 empty_msg = (
-                    ("原来没有这个文件。" if f.get("kind") == "A" else "此处原来没有这段内容。")
+                    ("原本沒有這個檔案。" if f.get("kind") == "A" else "此處原本沒有這段內容。")
                     if index == 0
-                    else "这段内容已删除。"
+                    else "這段內容已刪除。"
                 )
             pair += f'<p class="empty-copy">{empty_msg}</p>'
         else:
@@ -224,8 +224,11 @@ def remaining_chunks(
 def full_diff_html(f: dict[str, object], chunks: list[dict[str, object]]) -> str:
     out = ""
     for h in chunks:
-        loc = str(h.get("location", "文件内容"))
-        heading = f'<div class="hunk-heading">{e(loc)}</div>' if loc != "文件内容" else ""
+        loc = str(h.get("location", "檔案內容"))
+        # 相容舊版採集資料的預設標籤，避免在介面顯示簡體中文
+        if loc == "文件内容":
+            loc = "檔案內容"
+        heading = f'<div class="hunk-heading">{e(loc)}</div>' if loc != "檔案內容" else ""
         out += f'<div class="full-hunk">{heading}{comparison_html(h["before"], h["after"], f)}</div>'
     return out
 
@@ -235,15 +238,15 @@ def default_diagram_html(item: dict[str, object]) -> str:
     letters = "ABCDEF"
     cards = ""
     if not points:
-        mod = str(item.get("module") or item.get("title") or "核心改动")
+        mod = str(item.get("module") or item.get("title") or "核心變更")
         points = [{"title": mod}]
     for idx, pt in enumerate(points):
         letter = letters[idx % len(letters)]
-        pt_title = pt[0] if isinstance(pt, list) else pt.get("title", f"要点 {letter}")
+        pt_title = pt[0] if isinstance(pt, list) else pt.get("title", f"要點 {letter}")
         cards += (
             f'<section class="vis-card">'
             f'<div class="vis-card-head"><span>{letter}</span>{e(pt_title)}</div>'
-            f'{specimen_pair_html({"title": pt_title, "before": "旧实现逻辑", "after": pt_title}, idx)}</section>'
+            f'{specimen_pair_html({"title": pt_title, "before": "原本的處理邏輯", "after": pt_title}, idx)}</section>'
         )
     return f'<div class="visual-stage"><div class="vis-grid-3">{cards}</div></div>'
 
@@ -303,12 +306,12 @@ def domain_wire(kind: str) -> str:
     return f'<div class="domain-wire wire-{w_kind}">' + "".join("<i></i>" for _ in range(6)) + "</div>"
 
 
-def mini_shot_window(kind: str = "", side: int = 40, label: str = "项目") -> str:
+def mini_shot_window(kind: str = "", side: int = 40, label: str = "專案") -> str:
     return (
         f'<div class="shot-window {kind}" style="--mini-side:{side}px">'
         '<div class="window-chrome"><i></i><i></i><i></i></div>'
         '<div class="shot-sidebar"><i></i><i></i><i></i></div>'
-        f'<div class="shot-content"><strong>{e(label)}</strong><span>名称 <i>状态</i></span>'
+        f'<div class="shot-content"><strong>{e(label)}</strong><span>名稱 <i>狀態</i></span>'
         "<b></b><b></b><b></b><b></b></div></div>"
     )
 
@@ -321,7 +324,7 @@ def shot_frame_html(src: str, title: str, tag: str, good: bool = True) -> str:
     return (
         f'<div class="shot-frame {cls}">'
         f'<div class="shot-frame-bar"><span>{dot} {e(title)}</span>'
-        '<span class="shot-zoom-hint">🔍 点击放大</span></div>'
+        '<span class="shot-zoom-hint">🔍 點選放大</span></div>'
         f'<button type="button" class="shot-zoom-trigger" data-lightbox-src="{e(src)}" data-lightbox-caption="{e(cap)}">'
         f'<img src="{e(src)}" alt="{e(title)}" loading="lazy"></button>'
         f"{tag_html}</div>"
@@ -343,7 +346,7 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
             f'<div class="vis-box is-good"><button type="button" class="shot-zoom-trigger" data-lightbox-src="{e(shot_src)}" data-lightbox-caption="{e(title + " · " + good_tag)}"><img src="{e(shot_src)}" alt="{e(title)}" loading="lazy"></button><span class="vis-tag">{e(good_tag)}</span></div></div>'
         )
     if shot_src:
-        g_lbl = good_tag or bad_tag or "✓ 实机截图对照"
+        g_lbl = good_tag or bad_tag or "✓ 實機擷取畫面比較"
         return (
             f'<div class="vis-box is-good" style="flex:1">'
             f'<button type="button" class="shot-zoom-trigger" style="aspect-ratio:4/3" data-lightbox-src="{e(shot_src)}" data-lightbox-caption="{e(title + " · " + g_lbl)}">'
@@ -351,7 +354,7 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
             f'<span class="vis-tag">{e(g_lbl)}</span></div>'
         )
 
-    if kind == "chart" or any(k in title for k in ("图", "柱", "轴")):
+    if kind == "chart" or any(k in title for k in ("圖", "图", "柱", "軸", "轴")):
         bad_svg = (
             '<svg class="ui-Chart-svg" viewBox="0 0 160 62" aria-hidden="true">'
             '<path d="M18 6v46h132" fill="none" stroke="#3a3228" stroke-width="2"/>'
@@ -367,17 +370,17 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
             '<rect x="69" y="11" width="22" height="37" rx="4" fill="#4f825b"/>'
             '<rect x="108" y="27" width="22" height="21" rx="4" fill="#7fa682"/></svg>'
         )
-        b_lbl = bad_tag or "× 粗黑实线轴 + 刻度刺"
-        g_lbl = good_tag or "✓ 隐藏实线轴 + 圆角柱"
+        b_lbl = bad_tag or "× 粗黑實線軸 + 刻度線"
+        g_lbl = good_tag or "✓ 隱藏實線軸 + 圓角長條"
         return (
             f'<div class="vis-pair-stack">'
             f'<div class="vis-box is-bad">{bad_svg}<span class="vis-tag">{e(b_lbl)}</span></div>'
             f'<div class="vis-box is-good">{good_svg}<span class="vis-tag">{e(g_lbl)}</span></div></div>'
         )
 
-    if kind in ("select", "snapshot") or any(k in title for k in ("箭头", "下拉", "选择")):
-        bad_txt = str(sc.get("badText") or "超长选项文字内容挤压")
-        good_txt = str(sc.get("goodText") or "超长选项文字…")
+    if kind in ("select", "snapshot") or any(k in title for k in ("箭頭", "箭头", "下拉", "選擇", "选择")):
+        bad_txt = str(sc.get("badText") or "過長的選項文字擠在一起")
+        good_txt = str(sc.get("goodText") or "過長的選項文字…")
         bad_ui = (
             '<div class="ui-select-demo bad-select">'
             f'<span class="sel-text">{e(bad_txt)}</span>'
@@ -388,8 +391,8 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
             f'<span class="sel-text">{e(good_txt)}</span>'
             '<span class="sel-arrows">⌄</span></div>'
         )
-        b_lbl = bad_tag or "× 双箭头重叠 · 文字撞箭头"
-        g_lbl = good_tag or "✓ 单套箭头 · 最长文字留白"
+        b_lbl = bad_tag or "× 雙箭頭重疊 · 文字蓋住箭頭"
+        g_lbl = good_tag or "✓ 單一箭頭 · 最長文字保留空間"
         return (
             f'<div class="vis-pair-stack">'
             f'<div class="vis-box is-bad">{bad_ui}<span class="vis-tag">{e(b_lbl)}</span></div>'
@@ -397,10 +400,10 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
         )
 
     if kind == "metric" or sc.get("beforeValue") or sc.get("afterValue"):
-        b_val = str(sc.get("beforeValue") or sc.get("before") or "旧指标")
-        g_val = str(sc.get("afterValue") or sc.get("after") or "新指标")
+        b_val = str(sc.get("beforeValue") or sc.get("before") or "原本的數值")
+        g_val = str(sc.get("afterValue") or sc.get("after") or "更新後的數值")
         b_lbl = bad_tag or str(sc.get("before") or "× 修改前")
-        g_lbl = good_tag or str(sc.get("after") or "✓ 修改后")
+        g_lbl = good_tag or str(sc.get("after") or "✓ 修改後")
         bad_ui = (
             '<div class="ui-focus-demo">'
             f'<div class="ui-focus-row"><strong>{e(b_val)}</strong><span style="width:72%;height:6px;border-radius:99px;background:#d68d7a;display:inline-block"></span></div></div>'
@@ -416,10 +419,10 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
         )
 
     if kind != "focus" and (sc.get("before") or sc.get("after")) and not sc.get("badRows") and not sc.get("goodRows"):
-        b_txt = str(sc.get("before") or "修改前状态")
-        g_txt = str(sc.get("after") or "修改后状态")
+        b_txt = str(sc.get("before") or "修改前狀態")
+        g_txt = str(sc.get("after") or "修改後狀態")
         b_lbl = bad_tag or "× 修改前"
-        g_lbl = good_tag or "✓ 修改后"
+        g_lbl = good_tag or "✓ 修改後"
         bad_ui = f'<div class="ui-focus-demo"><div class="ui-focus-row"><span>{e(b_txt)}</span></div></div>'
         good_ui = f'<div class="ui-focus-demo"><div class="ui-focus-row is-focused"><span>{e(g_txt)}</span></div></div>'
         return (
@@ -428,8 +431,8 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
             f'<div class="vis-box is-good">{good_ui}<span class="vis-tag">{e(g_lbl)}</span></div></div>'
         )
 
-    bad_rows = sc.get("badRows") or [("#01 列表项 A", "状态重置"), ("#02 列表项 B", "焦点丢失")]
-    good_rows = sc.get("goodRows") or [("#01 列表项 A", "保留状态"), ("#02 列表项 B", "↩ 归还焦点")]
+    bad_rows = sc.get("badRows") or [("#01 清單項目 A", "狀態重設"), ("#02 清單項目 B", "焦點消失")]
+    good_rows = sc.get("goodRows") or [("#01 清單項目 A", "保留狀態"), ("#02 清單項目 B", "↩ 還原焦點")]
     bad_ui = '<div class="ui-focus-demo">' + "".join(
         f'<div class="ui-focus-row"><span>{e(r[0])}</span><span>{e(r[1])}</span></div>' for r in bad_rows[:2]
     ) + "</div>"
@@ -437,8 +440,8 @@ def specimen_pair_html(sc: dict[str, object], idx: int) -> str:
         f'<div class="ui-focus-row{" is-focused" if i == len(good_rows[:2]) - 1 else ""}"><span>{e(r[0])}</span><span>{e(r[1])}</span></div>'
         for i, r in enumerate(good_rows[:2])
     ) + "</div>"
-    b_lbl = bad_tag or "× 状态重置 · 焦点丢失"
-    g_lbl = good_tag or "✓ 保留状态 · 焦点归还"
+    b_lbl = bad_tag or "× 狀態重設 · 焦點消失"
+    g_lbl = good_tag or "✓ 保留狀態 · 焦點還原"
     return (
         f'<div class="vis-pair-stack">'
         f'<div class="vis-box is-bad">{bad_ui}<span class="vis-tag">{e(b_lbl)}</span></div>'
@@ -454,11 +457,11 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             diag.get("beforeTitle")
             or diag.get("beforeState")
             or before_obj.get("state")
-            or "修改前 · 单一入口混写"
+            or "修改前 · 單一入口混用"
         )
-        before_file = str(diag.get("beforeFile") or before_obj.get("file") or "入口文件")
-        before_sub = str(diag.get("beforeSub") or before_obj.get("sub") or "所有模块共用同一套流程")
-        before_note = str(diag.get("beforeNote") or before_obj.get("note") or "× 多类职责耦合在同一处")
+        before_file = str(diag.get("beforeFile") or before_obj.get("file") or "入口檔案")
+        before_sub = str(diag.get("beforeSub") or before_obj.get("sub") or "所有模組共用同一套流程")
+        before_note = str(diag.get("beforeNote") or before_obj.get("note") or "× 多種職責混在同一處")
         legacy_html = (
             f'<section class="legacy-domain">{vis_state(before_state)}'
             f'<div class="legacy-file">{artifact_file(before_file)}'
@@ -467,9 +470,9 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             f'<div class="wrong-rule">{e(before_note)}</div></section>'
         )
         entry_obj = diag.get("entry") if isinstance(diag.get("entry"), dict) else {}
-        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 按职责分流到独立模块")
+        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改後 · 依職責分流至獨立模組")
         entry_file = str(diag.get("entryFile") or entry_obj.get("file") or before_file)
-        entry_tag = str(diag.get("entryTag") or "按模块职责分流")
+        entry_tag = str(diag.get("entryTag") or "依模組職責分流")
         branches = list(diag.get("branches", []))
         wire_cycle = ["marketing", "workspace", "content", "play"]
         nodes_html: list[str] = []
@@ -498,12 +501,12 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         return f'<div class="visual-stage"><div class="domain-map">{legacy_html}{vis_arrow("domain-arrow")}{routes_html}</div></div>'
 
     if dtype == "comparison":
-        before_state = str(diag.get("beforeTitle") or diag.get("beforeState") or "修改前 · 控件高低不齐、硬塞装饰图")
-        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 同行等高对齐、边界干净统一")
-        brand_lbl = str(diag.get("brand") or "系统后台")
-        good_heading = str(diag.get("goodHeading") or "业务管理工作台")
-        bad_issues = list(diag.get("beforeIssues") or ["× 同行控件高低不齐", "× 色块与粗黑框混用", "× 硬塞无意义微图表"])
-        good_stds = list(diag.get("afterStandards") or ["✓ 同行控件等高对齐", "✓ 分段滑块底槽", "✓ 同层边界统一"])
+        before_state = str(diag.get("beforeTitle") or diag.get("beforeState") or "修改前 · 控制項高度不一、硬塞裝飾圖")
+        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改後 · 同列等高對齊、邊界一致")
+        brand_lbl = str(diag.get("brand") or "系統後台")
+        good_heading = str(diag.get("goodHeading") or "業務管理介面")
+        bad_issues = list(diag.get("beforeIssues") or ["× 同列控制項高度不一", "× 色塊與粗黑框混用", "× 硬塞無意義小圖表"])
+        good_stds = list(diag.get("afterStandards") or ["✓ 同列控制項等高對齊", "✓ 分段滑桿底槽", "✓ 同層邊界一致"])
         old_sec = (
             f"<section>{vis_state(before_state)}"
             '<div class="admin-window fake-admin"><aside class="fake-sidebar">'
@@ -511,21 +514,21 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             "<i></i><i></i><i></i></aside>"
             '<div class="fake-body">'
             '<div class="ui-toolbar-demo" style="margin-bottom:8px">'
-            '<span class="ui-ctrl" style="height:20px">搜索</span>'
-            '<span class="ui-ctrl" style="height:28px">全部状态 ▾⌄</span>'
-            '<span class="ui-ctrl" style="height:18px">导出</span></div>'
+            '<span class="ui-ctrl" style="height:20px">搜尋</span>'
+            '<span class="ui-ctrl" style="height:28px">所有狀態 ▾⌄</span>'
+            '<span class="ui-ctrl" style="height:18px">匯出</span></div>'
             '<div class="fake-metrics" style="grid-template-columns:1fr 1fr;gap:6px">'
-            '<div class="fake-metric" style="border:1.5px solid #6e5a4f;background:#efe2d5"><span>硬塞趋势</span><strong>〰〰</strong></div>'
-            '<div class="fake-metric" style="border:1.5px solid #6e5a4f;background:#efe2d5"><span>凑数卡片</span><strong>〰〰</strong></div></div>'
+            '<div class="fake-metric" style="border:1.5px solid #6e5a4f;background:#efe2d5"><span>硬塞趨勢</span><strong>〰〰</strong></div>'
+            '<div class="fake-metric" style="border:1.5px solid #6e5a4f;background:#efe2d5"><span>湊數卡片</span><strong>〰〰</strong></div></div>'
             '<div class="fake-table" style="margin-top:8px">'
-            '<div class="fake-row"><span>列表对象 A</span><span>异常</span><span>128</span></div>'
-            '<div class="fake-row"><span>列表对象 B</span><span>正常</span><span>64</span></div></div></div></div>'
+            '<div class="fake-row"><span>清單項目 A</span><span>異常</span><span>128</span></div>'
+            '<div class="fake-row"><span>清單項目 B</span><span>正常</span><span>64</span></div></div></div></div>'
             + '<div class="issue-legend">' + "".join(f"<span>{e(x)}</span>" for x in bad_issues[:3]) + "</div></section>"
         )
         rows_data = diag.get("tableRows") or [
-            ("核心列表对象 A", "待处理", "1,280"),
-            ("次级列表对象 B", "处理中", "860"),
-            ("归档列表对象 C", "已完成", "640"),
+            ("核心清單項目 A", "待處理", "1,280"),
+            ("次要清單項目 B", "處理中", "860"),
+            ("封存清單項目 C", "已完成", "640"),
         ]
         realrows = "".join(
             f'<div class="real-row"><strong>{e(r[0])}</strong>'
@@ -537,25 +540,25 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             f"<section>{vis_state(after_state, True)}"
             '<div class="admin-window real-admin"><aside class="real-sidebar"><span>◈</span><i></i><i></i><i></i></aside>'
             f'<div class="real-body"><header><strong>{e(good_heading)}</strong>'
-            '<div class="ui-seg"><span class="is-active">待处理</span><span>全部</span></div></header>'
+            '<div class="ui-seg"><span class="is-active">待處理</span><span>全部</span></div></header>'
             '<div class="ui-toolbar-demo is-equal" style="margin:9px 0">'
-            '<span class="ui-ctrl" style="height:24px;flex:1">⌕ 搜索关键词…</span>'
-            '<span class="ui-ctrl" style="height:24px">状态 ⌄</span>'
-            '<span class="ui-ctrl" style="height:24px;background:#edf3e6;color:#2f5c3e;border-color:#c9dac2">＋ 新建</span></div>'
-            '<div class="real-table"><div class="real-table-head"><span>名称</span><span>状态</span><span>数值</span></div>'
+            '<span class="ui-ctrl" style="height:24px;flex:1">⌕ 搜尋關鍵字…</span>'
+            '<span class="ui-ctrl" style="height:24px">狀態 ⌄</span>'
+            '<span class="ui-ctrl" style="height:24px;background:#edf3e6;color:#2f5c3e;border-color:#c9dac2">＋ 新增</span></div>'
+            '<div class="real-table"><div class="real-table-head"><span>名稱</span><span>狀態</span><span>數值</span></div>'
             f"{realrows}</div></div></div>"
             + '<div class="workspace-standards">' + "".join(f"<span>{e(x)}</span>" for x in good_stds[:3]) + "</div></section>"
         )
         return f'<div class="visual-stage"><div class="workspace-comparison">{old_sec}{new_sec}</div></div>'
 
     if dtype == "flow":
-        before_state = str(diag.get("beforeTitle") or diag.get("oldState") or "修改前 · 串行多轮冗余步骤")
-        after_state = str(diag.get("afterTitle") or diag.get("newState") or "修改后 · 精简并行与按条件收尾")
+        before_state = str(diag.get("beforeTitle") or diag.get("oldState") or "修改前 · 多輪依序重複步驟")
+        after_state = str(diag.get("afterTitle") or diag.get("newState") or "修改後 · 精簡並行、依條件收尾")
         thumbs = [
             '<div class="candidate-thumbs"><i></i><i></i><i></i></div>',
             '<div class="score-preview"><b>8.0</b><span>/ 10</span></div>',
             '<div class="comparison-thumbs"><i></i><span>⇄</span><i></i></div>',
-            '<div class="trial-preview"><span>冗余</span></div>',
+            '<div class="trial-preview"><span>重複</span></div>',
         ]
         steps = list(diag.get("beforeSteps") or diag.get("oldSteps") or [])
         old_nodes = ""
@@ -564,7 +567,7 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             removed = (
                 bool(st.get("removed"))
                 if isinstance(st, dict)
-                else any(k in label for k in ("强制", "误报", "重复", "第 2 轮", "×"))
+                else any(k in label for k in ("強制", "强制", "誤報", "误报", "重複", "重复", "第 2 輪", "第 2 轮", "×"))
             )
             thumb = thumbs[i % len(thumbs)]
             rem_cls = " is-removed" if removed else ""
@@ -581,16 +584,16 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
             '<path d="M1 34h12v82H1m12-41h13m-4-4 4 4-4 4" fill="none" '
             'stroke="currentColor" stroke-width="1.2" vector-effect="non-scaling-stroke"/></svg>'
         )
-        start_node = diag.get("startNode") or {"title": "入口执行", "tag": "统一输入"}
+        start_node = diag.get("startNode") or {"title": "入口執行", "tag": "統一輸入"}
         tracks = list(
             diag.get("parallelTracks")
             or diag.get("tracks")
             or [
-                {"symbol": "◉", "title": "主链路检查", "tag": "核心规则核对"},
-                {"symbol": "↗", "title": "边界检查", "tag": "异常与状态核对"},
+                {"symbol": "◉", "title": "主要流程檢查", "tag": "確認核心規則"},
+                {"symbol": "↗", "title": "邊界檢查", "tag": "確認異常與狀態"},
             ]
         )
-        end_node = diag.get("endNode") or {"title": "汇总输出", "tag": "按条件收尾"}
+        end_node = diag.get("endNode") or {"title": "彙整輸出", "tag": "依條件收尾"}
         t_html = ""
         for idx, tr in enumerate(tracks[:2]):
             sym = tr.get("symbol") or ("◉" if idx == 0 else "↗")
@@ -616,24 +619,24 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         )
 
     if dtype == "alignment":
-        before_state = str(diag.get("beforeTitle") or diag.get("beforeState") or "修改前 · 只按整张图宽度缩放")
-        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改后 · 先按共有元素同宽，再裁同一区域")
+        before_state = str(diag.get("beforeTitle") or diag.get("beforeState") or "修改前 · 僅依整張圖片寬度縮放")
+        after_state = str(diag.get("afterTitle") or diag.get("afterState") or "修改後 · 先將共用元素縮放至同寬，再裁切相同區域")
         old_col = (
             f'<section class="alignment-before">{vis_state(before_state)}'
-            f'<div class="shot-pair"><div><span class="shot-caption">当前画面</span>'
+            f'<div class="shot-pair"><div><span class="shot-caption">目前畫面</span>'
             f'<div class="ruler short-ruler">120 px</div>{mini_shot_window("too-small", 20)}</div>'
-            f'<div><span class="shot-caption">参考图</span>'
+            f'<div><span class="shot-caption">參考圖</span>'
             f'<div class="ruler">240 px</div>{mini_shot_window("", 40)}</div></div>'
             '<div class="mismatch-ruler"><span>120 px</span><b>≠</b><span>240 px</span></div></section>'
         )
         new_col = (
             f'<section class="alignment-after">{vis_state(after_state, True)}'
             '<div class="tool-options"><code>matchWidth: 240</code><code>crop: {x, y, w, h}</code></div>'
-            f'<div class="shot-pair aligned-pair"><div><span class="shot-caption">当前画面 <em>2.0×</em></span>'
+            f'<div class="shot-pair aligned-pair"><div><span class="shot-caption">目前畫面 <em>2.0×</em></span>'
             f'<div class="ruler">240 px</div>{mini_shot_window("has-crop", 40)}</div>'
-            f'<div><span class="shot-caption">参考图</span>'
+            f'<div><span class="shot-caption">參考圖</span>'
             f'<div class="ruler">240 px</div>{mini_shot_window("has-crop", 40)}</div></div>'
-            '<div class="stitched-caption">1:1 并排裁切</div>'
+            '<div class="stitched-caption">1:1 並排裁切</div>'
             f'<div class="stitched-result">{mini_shot_window("crop-output", 40)}{mini_shot_window("crop-output", 40)}</div></section>'
         )
         return f'<div class="visual-stage"><div class="alignment-grid">{old_col}{new_col}</div></div>'
@@ -644,7 +647,7 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         b_src = str(diag.get("beforeSrc") or b_obj.get("src") or "")
         a_src = str(diag.get("afterSrc") or diag.get("src") or a_obj.get("src") or "")
         b_title = str(diag.get("beforeTitle") or b_obj.get("title") or "修改前")
-        a_title = str(diag.get("afterTitle") or a_obj.get("title") or "修改后")
+        a_title = str(diag.get("afterTitle") or a_obj.get("title") or "修改後")
         b_tag = str(diag.get("beforeTag") or b_obj.get("tag") or "")
         a_tag = str(diag.get("afterTag") or a_obj.get("tag") or "")
         default_mode = "slider" if (b_src and a_src) else "pair"
@@ -658,7 +661,7 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
                 f'<span class="shot-slider-badge is-before">{e(b_title)}</span>'
                 f'<span class="shot-slider-badge is-after">{e(a_title)}</span>'
                 f'<div class="shot-slider-line"></div><div class="shot-slider-knob">↔</div>'
-                f'<input type="range" min="5" max="95" value="50" class="shot-slider-input" aria-label="左右拖动对比修改前后截图">'
+                f'<input type="range" min="5" max="95" value="50" class="shot-slider-input" aria-label="左右拖曳比較修改前後的擷取畫面">'
                 f"</div>"
                 f'<div class="shot-slider-foot">'
                 f'<button type="button" class="shot-zoom-link is-bad" data-shot-zoom="{e(b_src)}" data-shot-caption="{e(b_title)}">{e(b_tag or b_title)} · 🔍 放大</button>'
@@ -681,7 +684,7 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         frames = "".join(
             shot_frame_html(
                 str(s.get("src", "")),
-                str(s.get("title", f"截图 {i + 1}")),
+                str(s.get("title", f"擷取畫面 {i + 1}")),
                 str(s.get("tag", "")),
                 (str(s.get("state", "")).lower() != "bad") if "state" in s else bool(s.get("good", True)),
             )
@@ -690,10 +693,10 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         return f'<div class="visual-stage"><div class="{cols}">{frames}</div></div>'
 
     if dtype == "schema":
-        b_title = str(diag.get("beforeTitle") or "修改前 · 旧结构")
-        a_title = str(diag.get("afterTitle") or "修改后 · 新结构")
-        raw_b = list(diag.get("beforeRows") or diag.get("beforeFields") or ["旧字段 / 旧签名"])
-        raw_a = list(diag.get("afterRows") or diag.get("afterFields") or ["新字段 / 新签名"])
+        b_title = str(diag.get("beforeTitle") or "修改前 · 原本的結構")
+        a_title = str(diag.get("afterTitle") or "修改後 · 更新後的結構")
+        raw_b = list(diag.get("beforeRows") or diag.get("beforeFields") or ["原本欄位 / 原本宣告"])
+        raw_a = list(diag.get("afterRows") or diag.get("afterFields") or ["更新欄位 / 更新宣告"])
 
         def _fmt_schema_row(r: object, is_add: bool) -> str:
             cls = "is-add" if is_add else "is-del"
@@ -719,15 +722,15 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
         )
 
     if dtype == "diagnostics":
-        test_file = str(diag.get("testFile") or diag.get("file") or "自动化检查与验证")
+        test_file = str(diag.get("testFile") or diag.get("file") or "自動化檢查與驗證")
         rows_html = ""
         for idx, row in enumerate(diag.get("rows", [])):
             passed = bool(row.get("pass", idx > 0))
             b_cls = "is-pass" if passed else "is-fail"
-            left_node = str(row.get("left") or row.get("file") or row.get("title") or f"检查项 {idx + 1}")
-            edge_lbl = str(row.get("edge") or ("拦截" if not passed else "核对"))
-            right_node = str(row.get("right") or row.get("target") or row.get("detail") or "规则断言")
-            verdict = str(row.get("verdict") or ("✓ 通过" if passed else "× 拦截"))
+            left_node = str(row.get("left") or row.get("file") or row.get("title") or f"檢查項目 {idx + 1}")
+            edge_lbl = str(row.get("edge") or ("攔截" if not passed else "核對"))
+            right_node = str(row.get("right") or row.get("target") or row.get("detail") or "規則檢查")
+            verdict = str(row.get("verdict") or ("✓ 通過" if passed else "× 攔截"))
             rows_html += (
                 f'<div class="pipe-row">'
                 f'<span class="pipe-node">{artifact_file(left_node)}</span>'
@@ -747,7 +750,7 @@ def render_structured_diagram(diag: dict[str, object], item: dict[str, object]) 
     scenario_list = list(diag.get("scenarios") or diag.get("cards") or [])
     for idx, sc in enumerate(scenario_list):
         letter = letters[idx % len(letters)]
-        title = str(sc.get("title", f"图示 {letter}"))
+        title = str(sc.get("title", f"圖示 {letter}"))
         cards += (
             f'<section class="vis-card">'
             f'<div class="vis-card-head"><span>{letter}</span>{e(title)}</div>'
@@ -784,9 +787,9 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         nonlocal serial
         serial += 1
         dom_id = f"diff-{n}-{serial}"
-        module_name = str(spec_items[n - 1].get("module", f"事项 {n}"))
+        module_name = str(spec_items[n - 1].get("module", f"事項 {n}"))
         context = f"§ {n:02d} {module_name}"
-        context += f" · 要点 {point_idx}：{point_title}" if point_idx else " · 关联文件"
+        context += f" · 要點 {point_idx}：{point_title}" if point_idx else " · 相關檔案"
         targets.append(
             {
                 "requirement": n,
@@ -809,7 +812,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         content = comparison_html(before, after, f)
         if rem:
             content += (
-                f'<details class="complete-diff"><summary><span>查看该文件其余修改（共 {len(rem)} 处）</span>'
+                f'<details class="complete-diff"><summary><span>查看此檔案的其他修改（共 {len(rem)} 處）</span>'
                 f'{CHEVRON_SVG}</summary><div class="fold-content" data-fold-content>'
                 f'<div class="complete-body">{full_diff_html(f, rem)}</div></div></details>'
             )
@@ -833,8 +836,8 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         range_tokens.append(str(r_info.get("to", "")))
     range_chain = " → ".join(dict.fromkeys(t for t in range_tokens if t)) or str(data.get("branch", "HEAD"))
 
-    eyebrow = str(spec.get("eyebrow") or f'{data.get("repoName", "repo")} / 改动汇报')
-    title = str(spec.get("title") or f"这次修改了哪 {len(spec_items)} 件事")
+    eyebrow = str(spec.get("eyebrow") or f'{data.get("repoName", "repo")} / 變更報告')
+    title = str(spec.get("title") or f"這次修改了哪 {len(spec_items)} 件事")
     summary = str(spec.get("summary") or "")
 
     # Compute core files (referenced directly in points[].diffs) vs peripheral sync files
@@ -854,9 +857,9 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
 
     metadata = (
         f'<div class="header-controls">'
-        f'<div class="report-meta"><span>{data["uniquePaths"]} 个文件 '
+        f'<div class="report-meta"><span>{data["uniquePaths"]} 個檔案 '
         f"<b>+{total_add}</b> <i>−{total_delete}</i></span>"
-        f'<span>🎯 {len(core_paths)} 核心 · 📎 {sync_count} 外围</span>'
+        f'<span>🎯 {len(core_paths)} 核心 · 📎 {sync_count} 周邊</span>'
         f"<code>{e(range_chain)}</code></div></div>"
     )
 
@@ -864,23 +867,23 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         f'<header class="intro paper-card"><div class="eyebrow">{e(eyebrow)}</div>'
         f'<div class="title-row"><h1>{e(title)}</h1>{metadata}</div>'
         f"<p>{e(summary)}</p>"
-        f'<nav class="overview-nav" aria-label="事项速览">'
+        f'<nav class="overview-nav" aria-label="事項總覽">'
     )
     for n, item in enumerate(spec_items, 1):
-        nav_title = str(item.get("module") or item.get("navLabel") or f"事项 {n}")
+        nav_title = str(item.get("module") or item.get("navLabel") or f"事項 {n}")
         item_fids = [str(fid) for fid in item.get("fileIds", [])]
         intro += (
             f'<a href="#requirement-{n}" data-requirement-link="{n}">'
             f'<span class="nav-number">{n}</span>'
             f'<span class="nav-label">{e(nav_title)}</span>'
-            f'<span class="nav-count">{len(item_fids)} 文件</span>'
+            f'<span class="nav-count">{len(item_fids)} 檔案</span>'
             f'<span class="nav-arrow" aria-hidden="true">↘</span></a>'
         )
     intro += "</nav></header>"
 
-    sticky = '<div class="sticky-nav-host" aria-hidden="true" inert><nav class="sticky-chapter-nav" aria-label="章节快速导航">'
+    sticky = '<div class="sticky-nav-host" aria-hidden="true" inert><nav class="sticky-chapter-nav" aria-label="章節快速導覽">'
     for n, item in enumerate(spec_items, 1):
-        nav_label = str(item.get("navLabel") or item.get("module") or f"事项 {n}")
+        nav_label = str(item.get("navLabel") or item.get("module") or f"事項 {n}")
         sticky += f'<a href="#requirement-{n}" data-requirement-link="{n}"><span>§ {n:02d}</span>{e(nav_label)}</a>'
     chapters_html = ""
 
@@ -963,7 +966,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
             names = "、".join(list(dict.fromkeys(str(f["name"]) for f in extra))[:2])
             chapters_html += (
                 f'<details class="related-files" id="related-{n}">'
-                f'<summary><span class="related-summary-left"><span class="blast-badge is-sync">📎 外围同步 ({count})</span>'
+                f'<summary><span class="related-summary-left"><span class="blast-badge is-sync">📎 周邊同步 ({count})</span>'
                 f'<span class="sync-names">{e(names)} 等</span></span>{CHEVRON_SVG}</summary>'
                 f'<div class="fold-content" data-fold-content><div class="related-file-list">'
             )
@@ -1029,23 +1032,24 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
 
     repo_label = str(data.get("repoName") or "repository")
     sidebar = (
-        '<aside class="file-sidebar" id="file-sidebar" aria-label="改动文件树">'
+        '<aside class="file-sidebar" id="file-sidebar" aria-label="變更檔案樹">'
         '<header class="tree-header"><div class="tree-heading">'
-        f'<h2>改动文件树</h2><span class="repository-label">{e(repo_label)}</span></div>'
-        '<button type="button" class="tree-toggle-btn" data-tree-toggle title="收起改动文件树" aria-label="收起改动文件树">收起 ⇥</button>'
+        f'<h2>變更檔案樹</h2><span class="repository-label">{e(repo_label)}</span></div>'
+        '<button type="button" class="tree-toggle-btn" data-tree-toggle title="收起變更檔案樹" aria-label="收起變更檔案樹">收起 ⇥</button>'
         '</header><div class="tree-scroll" id="tree-scroll">'
         f"{tree_html(tree)}</div></aside>"
-        f'<button type="button" class="tree-reopen-btn" data-tree-toggle title="展开改动文件树" aria-label="展开改动文件树">⇤ 文件树 ({data["uniquePaths"]})</button>'
+        f'<button type="button" class="tree-reopen-btn" data-tree-toggle title="展開變更檔案樹" aria-label="展開變更檔案樹">⇤ 檔案樹 ({data["uniquePaths"]})</button>'
     )
 
     drawer = (
         '<div class="diff-drawer-root" hidden><div class="diff-drawer-backdrop" aria-hidden="true"></div>\n'
-        '<aside class="diff-drawer" id="diff-drawer-panel" role="dialog" aria-label="原文对照" tabindex="-1">\n'
-        '<header class="drawer-header"><div class="drawer-toolbar"><span class="drawer-label">原文对照</span>'
+        '<aside class="diff-drawer" id="diff-drawer-panel" role="dialog" aria-label="原文對照" tabindex="-1">\n'
+        '<div class="drawer-resize-handle" data-drawer-resize title="拖曳調整抽屜寬度" aria-hidden="true"></div>'
+        '<header class="drawer-header"><div class="drawer-toolbar"><span class="drawer-label">原文對照</span>'
         '<div class="drawer-actions">\n'
-        '<button type="button" data-drawer-prev aria-label="查看上一处修改">← 上一处</button>'
-        '<button type="button" data-drawer-next aria-label="查看下一处修改">下一处 →</button>\n'
-        '<button type="button" class="drawer-close" data-drawer-close aria-label="关闭原文对照">'
+        '<button type="button" data-drawer-prev aria-label="查看上一處修改">← 上一處</button>'
+        '<button type="button" data-drawer-next aria-label="查看下一處修改">下一處 →</button>\n'
+        '<button type="button" class="drawer-close" data-drawer-close aria-label="關閉原文對照">'
         '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" fill="none" '
         'stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button></div></div>\n'
         '<div class="drawer-information"><p class="drawer-context"></p>'
@@ -1055,10 +1059,10 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
     )
 
     lightbox = (
-        '<div class="shot-lightbox" id="shot-lightbox" hidden role="dialog" aria-label="截图预览">'
+        '<div class="shot-lightbox" id="shot-lightbox" hidden role="dialog" aria-label="擷取畫面預覽">'
         '<img src="data:," alt="">'
         '<div class="shot-lightbox-bar"><span class="shot-lightbox-caption"></span>'
-        '<button type="button" class="shot-lightbox-close">关闭 (Esc)</button></div></div>'
+        '<button type="button" class="shot-lightbox-close">關閉 (Esc)</button></div></div>'
     )
 
     data["reading"] = {"treeFiles": list(paths.values()), "targets": targets}
@@ -1068,7 +1072,7 @@ def render_report_body(data: dict[str, object], spec: dict[str, object]) -> str:
         '<div class="bg-fade" aria-hidden="true"></div>'
         '<div class="report-layout"><main class="report-main">'
         + body
-        + f'<footer class="page-footer"><span>{e(footer_label)}</span><a href="#top">回到顶部 ↑</a></footer>'
+        + f'<footer class="page-footer"><span>{e(footer_label)}</span><a href="#top">回到頂端 ↑</a></footer>'
         + "</main>"
         + sidebar
         + "</div>"
@@ -1090,10 +1094,10 @@ def render_html_document(data: dict[str, object], spec: dict[str, object]) -> st
         "reading": data.get("reading", {}),
     }
     serialized_data = json.dumps(client_data, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
-    page_title = f'{spec.get("title", "改动汇报")} · {data.get("repoName", "oil-diff")} 改动汇报'
+    page_title = f'{spec.get("title", "變更報告")} · {data.get("repoName", "oil-diff")} 變更報告'
     return (
         "<!doctype html>\n"
-        '<html lang="zh-CN">\n'
+        '<html lang="zh-TW">\n'
         "<head>\n"
         '<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'

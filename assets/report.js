@@ -186,6 +186,67 @@ const targetMap = new Map(targets.map(target => [target.id, target]));
 let drawerOpen = false, drawerTarget = null, drawerVersion = 0;
 let slideAnimation = null, shadeAnimation = null, contentAnimations = [], returnFocus = null;
 
+class DrawerResize {
+  #panel;
+  #handle;
+  #storageKey = 'oil-diff.drawer-width';
+  #drag = null;
+
+  // 頁面載入時還原寬度，並將拖曳事件集中在抽屜左側把手
+  constructor(panel) {
+    this.#panel = panel;
+    this.#handle = panel.querySelector('[data-drawer-resize]');
+    try {
+      const width = Number(localStorage.getItem(this.#storageKey));
+      if (Number.isFinite(width) && width > 0) panel.style.setProperty('--drawer-width', width + 'px');
+    } catch {
+      // 瀏覽器禁止儲存時，仍可使用預設寬度與拖曳功能
+    }
+    this.#handle.addEventListener('pointerdown', event => this.#start(event));
+    this.#handle.addEventListener('pointermove', event => this.#move(event));
+    this.#handle.addEventListener('pointerup', event => this.#finish(event));
+    this.#handle.addEventListener('lostpointercapture', () => this.#cancel());
+  }
+
+  // 按住把手後捕捉滑鼠，讓游標離開抽屜也能繼續調整
+  #start(event) {
+    if (this.#drag || event.button !== 0 || !event.isPrimary) return;
+    event.preventDefault();
+    this.#drag = {pointerId: event.pointerId, x: event.clientX, width: this.#panel.getBoundingClientRect().width};
+    this.#handle.setPointerCapture(event.pointerId);
+    document.body.classList.add('is-drawer-resizing');
+  }
+
+  // 向左拖曳增加寬度，實際上下限由抽屜樣式限制
+  #move(event) {
+    if (this.#drag?.pointerId !== event.pointerId) return;
+    const width = Math.max(1, this.#drag.width + this.#drag.x - event.clientX);
+    this.#panel.style.setProperty('--drawer-width', width + 'px');
+  }
+
+  // 放開滑鼠後記住實際寬度，避免儲存超出畫面的拖曳距離
+  #finish(event) {
+    if (this.#drag?.pointerId !== event.pointerId) return;
+    this.#move(event);
+    const width = this.#panel.getBoundingClientRect().width;
+    this.#panel.style.setProperty('--drawer-width', width + 'px');
+    try {
+      localStorage.setItem(this.#storageKey, String(width));
+    } catch {
+      // 儲存空間不可用時，保留本次頁面的調整結果
+    }
+    this.#cancel();
+    this.#handle.releasePointerCapture(event.pointerId);
+  }
+
+  // 拖曳結束或被系統中斷時，移除全頁拖曳狀態
+  #cancel() {
+    this.#drag = null;
+    document.body.classList.remove('is-drawer-resizing');
+  }
+}
+new DrawerResize(drawer);
+
 function selectFile(target) {
   for (const card of document.querySelectorAll('.diff-card.is-active')) {
     card.classList.remove('is-active');

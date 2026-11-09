@@ -1,99 +1,120 @@
 <p align="center">
-  <img src="./assets/readme/hero.svg" width="100%" alt="oil-diff：把零散的 Git 改动，变成人人看得懂的可视化汇报页。">
+  <img src="./assets/readme/hero.svg" width="100%" alt="oil-diff：將零散的 Git 變更整理成容易理解的視覺化報告頁。">
 </p>
 
-`oil-diff` 是一个 **Git 改动可视化汇报 Skill**。它把工作区修改、某次提交或分支之间的 Git Diff，按业务目的整理成 **3～7 件具体的事**，自动生成一份一屏看懂的 HTML 汇报页（`.oil-diff/index.html`）。
+本專案由 [oil-oil/oil-diff](https://github.com/oil-oil/oil-diff) 翻譯為**繁體中文**，並依個人習慣調整 UI 介面。
 
-无论是向团队汇报一轮改动、合并代码前自己通览全局，还是想快速搞懂 AI 刚才改了什么，都不需要按字母顺序挨个翻几十个源码文件——打开网页，30 秒就能看清改了哪几块业务、为什么改、核心要看哪几个文件。
+- 專案網址：[don6105/oil-diff](https://github.com/don6105/oil-diff)。
+
+- `oil-diff` 是將 Git 變更整理成視覺化報告的 Skill。
+- 它會依業務目的，將工作區修改、某次提交或分支之間的差異整理成 **3～7 件具體事項**。
+- 產生的 HTML 報告頁位於 `.oil-diff/index.html`。
+- 適合向團隊說明變更、合併程式碼前檢查全貌，或快速了解人工智慧剛才修改了哪些內容。
+  - 開啟網頁即可查看業務範圍、修改原因，以及需要優先檢查的檔案。
 
 <p align="center">
-  <img src="./assets/readme/before-after.svg" width="100%" alt="对比直接翻看原始 Git Diff 与使用 oil-diff 阅读可视化汇报页的差异。">
+  <img src="./assets/readme/before-after.svg" width="100%" alt="比較直接閱讀 Git 差異與使用 oil-diff 視覺化報告頁的差別。">
 </p>
 
 ## 核心功能
 
 <p align="center">
-  <img src="./assets/readme/section-features.svg" width="100%" alt="核心功能：按业务讲人话，配直观图示与代码抽屉">
+  <img src="./assets/readme/section-features.svg" width="100%" alt="核心功能：依業務目的說明變更，搭配圖示與程式碼抽屜。">
 </p>
 
-### 1. 一屏 Bento 看板，按业务讲人话
+### 1. 以 Bento 看板整理業務變更
 
-不再按文件列表罗列改动，而是把整批修改归纳成几张清晰的业务卡片：顶部先给出一行模块导航，每张卡片用平实的话讲清「原来有什么痛点、现在怎么解决」，拒绝空洞的技术黑话。
+- 將整批修改整理成業務卡片，不必逐一翻閱檔案清單。
+- 頁面頂端提供模組導覽。
+- 每張卡片說明原本的問題與目前的處理方式。
 
 <p align="center">
-  <img src="./assets/readme/case-overview.png" width="100%" alt="oil-diff 首屏总览与右侧改动文件树。">
+  <img src="./assets/readme/case-overview.png?v=zh-tw-2" width="100%" alt="oil-diff 頁面總覽與右側變更檔案樹。">
 </p>
 
-### 2. 配图是配图，文字是文字
+### 2. 圖示與文字各自說明重點
 
-每一章都配有直观的前后对比图，不用大段文字凑数：
-- **有界面改动时**：支持放入修改前后的真实运行截图，直接拖动滑杆对比或点击放大；
-- **纯逻辑或规则改动时**：自动生成路由分流图、控件前后对比、流程变化或字段增删表，一眼看懂机制变化。
+- 每一章都提供修改前後的比較圖。
+- **介面變更**：可放入實際執行時擷取的畫面。
+  - 拖曳滑桿比較修改前後的差異，或點選放大。
+- **邏輯或規則變更**：可產生路由分流圖、控制項比較圖、流程圖或欄位增刪表。
 
 <p align="center">
-  <img src="./assets/readme/case-diagram-routing.png" width="100%" alt="章节配图示例：把复杂的规则拆分画成直观的分流结构。">
+  <img src="./assets/readme/case-diagram-routing.png?v=zh-tw-2" width="100%" alt="章節圖示範例：將複雜規則拆成容易理解的分流結構。">
 </p>
 
-### 3. 按具体改动分类「🎯 核心必看」与「📎 外围同步」
+### 3. 區分「🎯 核心必看」與「📎 周邊同步」
 
-一次改动涉及几十个文件时，自动帮你分好轻重缓急：
-- **🎯 核心必看**：直接归类挂在每章的 `1`、`2` 具体改动点下方，标明增删行数，告诉你 Review 时最该看哪几个文件；
-- **📎 外围同步**：顺手同步修改的引用、配置或文档自动折叠收在卡片底部，不抢视线、也不漏文件。
+- **🎯 核心必看**：依章節中的具體變更要點分類。
+  - 標示新增與刪除行數，方便審查時優先查看核心檔案。
+- **📎 周邊同步**：收納同步修改的引用、設定與文件。
+  - 預設摺疊於卡片底部，保留完整範圍並減少畫面干擾。
 
-### 4. 可收起文件树 + 右侧滑出代码抽屉
+### 4. 可收合的檔案樹與可調整寬度的程式碼抽屜
 
-右侧配有紧凑的改动文件树（支持一键收起释放全宽画布）。想看某处具体改了哪几行代码时，点一下「核心必看」文件胶囊或右侧文件树，右侧立即滑出修改前后代码对照抽屉，主页面原地不动、不乱滚。
+- 右側提供變更檔案樹，可一鍵收合以增加閱讀空間。
+- 點選核心檔案標籤或檔案樹，即可開啟右側的程式碼抽屜。
+  - 抽屜顯示修改前後的原文對照。
+  - 主頁面的高度與捲動位置維持不變。
+- 拖曳抽屜左側邊緣即可調整寬度。
+  - 瀏覽器會記住寬度，再次開啟時沿用。
 
 <p align="center">
-  <img src="./assets/readme/case-drawer.png" width="100%" alt="点击文件从右侧滑出修改前后代码对照抽屉。">
+  <img src="./assets/readme/case-drawer.png?v=zh-tw-2" width="100%" alt="點選檔案後，從右側開啟修改前後的程式碼對照抽屜。">
 </p>
 
-## 安装与使用
+## 安裝與使用
 
 <p align="center">
-  <img src="./assets/readme/section-use.svg" width="100%" alt="安装与使用：直接把仓库或分支交给你的 Agent">
+  <img src="./assets/readme/section-use.svg" width="100%" alt="安裝與使用：將儲存庫或分支交給 Agent 處理。">
 </p>
 
-### 安装
+### 安裝
 
-**方式一 · 命令行安装**
+- **方式一：命令列安裝**
+  - 安裝本專案的繁體中文版。
 
 ```bash
-npx skills add oil-oil/oil-diff
+npx skills add don6105/oil-diff
 ```
 
-**方式二 · 直接发给 Agent 安装**
+- **方式二：請 Agent 安裝**
 
 ```text
-请帮我安装这个 Skill：https://github.com/oil-oil/oil-diff
+請幫我安裝這個 Skill：https://github.com/don6105/oil-diff
 ```
 
 ### 日常使用
 
-安装后，直接在对话里告诉 Agent 你想看哪部分改动即可：
+- 安裝後，直接在對話中指定要查看的變更範圍。
 
 ```text
-用 oil-diff 把当前分支最近的改动做成汇报页。
+用 oil-diff 將目前分支最近的變更做成報告頁。
 ```
 
 ```text
-用 oil-diff 整理目前还没提交的修改，生成一份 HTML 改动汇报。
+用 oil-diff 整理目前尚未提交的修改，產生一份 HTML 變更報告。
 ```
 
 ```text
-用 oil-diff 对比 main..HEAD 的改动，看看这轮到底改了哪几件事。
+用 oil-diff 比較 main..HEAD 的差異，說明這次修改了哪些事項。
 ```
 
-## 适用边界、数据与运行环境
+## 適用範圍、資料與執行環境
 
-- **零污染仓库状态**：生成的网页与数据全部放在 `<repo>/.oil-diff/` 目录下，并自动对 Git 隐形，不修改项目原本的任何文件，也不影响 `git status`。
-- **单文件离线可用**：最终生成的 `.oil-diff/index.html` 是零外部依赖的单文件网页，双击就能在浏览器打开，也可以直接发给同事查看。
-- **配置与兼容性**：无需额外配置 API Key 或环境变量；仅依赖系统 `git` 与 Python 3.10+ 标准库，支持 macOS、Windows 与 Linux。
+- **不影響儲存庫狀態**：產生的網頁與資料都放在 `<repo>/.oil-diff/`。
+  - 該目錄會自動被 Git 忽略。
+  - 不修改目標專案的既有檔案，也不影響 `git status`。
+- **單一檔案可離線使用**：`.oil-diff/index.html` 不依賴外部資源。
+  - 按兩下即可在瀏覽器開啟，也可以直接傳給同事。
+- **設定與相容性**：僅依賴系統的 `git` 與 Python 3.10+ 標準函式庫。
+  - 不需要額外設定金鑰或環境變數。
+  - 支援 macOS、Windows 與 Linux。
 
 <p align="center">
-  <a href="https://github.com/oil-oil/beautify-github-readme"><img src="./assets/readme/made-with-beautify.svg" width="300" alt="README made with beautify-github-readme"></a>
+  <a href="https://github.com/oil-oil/beautify-github-readme"><img src="./assets/readme/made-with-beautify.svg" width="300" alt="README 使用 beautify-github-readme 製作。"></a>
 </p>
 
-## 许可证
+## 授權條款
 
-MIT License
+- MIT License
